@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * @todo Build schema for persisting children layouts.
+ * @todo Use Ctools Export API for retrieval of children layouts.
+ * @todo Build UI for creating "stacks".
+ */
+/**
+ * Implements hook_menu().
+ */
+function panels_frame_menu() {
+  $items['admin/structure/panels/frame'] = array(
+    'title' => 'Frame',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('panels_frame_temp_admin'),
+    'access arguments' => array('use panels dashboard'),
+    'file' => 'panels_frame.admin.inc',
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function panels_frame_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'panels' && $plugin == 'layouts') {
+    return "plugins/$plugin";
+  }
+}
