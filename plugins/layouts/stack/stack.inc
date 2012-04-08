@@ -23,11 +23,14 @@ $plugin = array(
 //   ) + $plugin;
 // }
 
-function panels_frame_stack_fake_configured_layouts() {
+function panels_frame_stack_fake_frames() {
   return array(
-    'twocol',
-    'twocol_bricks',
-    // 'stack',
+    'first' => array(
+      'layout' => 'twocol',
+    ),
+    'second' => array(
+      'layout' => 'threecol_25_50_25',
+    ),
   );
 }
 
@@ -49,33 +52,81 @@ function panels_frame_stack_fake_configured_layouts() {
 /**
  * Regions callback.
  * Collect the regions from the compiled layouts.
- * @todo layouts should be derived from configured sub-layouts. They should be
- * placed in the top-level of the array with unique keys (which should be abled
- * to be mapped to the original layout)
- * @todo detect recursion, in particular that we don't have itself as a sub-layout
  */
-function panels_frame_stack_region(&$display, $settings, $layout) {
+function panels_frame_stack_region(&$display, $settings, $base_layout) {
   $regions = array();
-  foreach (panels_frame_stack_fake_configured_layouts() as $sub_layout) {
-    // Avoid recursion.
-    if ($display->layout == $sub_layout) {
+
+  // @todo replace with export_ui objects
+  foreach (panels_frame_stack_fake_frames() as $name => $frame) {
+    // Avoid recursion. @todo add form validation to prevent this from occurring on the front-end.
+    if ($display->layout == $frame['layout']) {
+      watchdog('panels_frame', '@frame cannot be embedded within itself!', array('@frame' => $frame['layout']), WATHDOG_WARNING);
       continue;
     }
-    $sub_layout_plugin = panels_get_layout($sub_layout);
-    $regions += panels_get_regions($sub_layout_plugin, $display);
+
+    $frame['plugin'] = panels_get_layout($frame['layout']);
+
+    foreach (panels_get_regions($frame['plugin'], $display) as $region => $label) {
+      $frame['regions'][$region]['region'] = $region;
+      $regions[$name . '_' . $region] = $label;
+    }
+
+    $display->panels_frame[$name] = $frame;
   }
+
   return $regions;
 }
 
 /**
  * @todo render each individual sub-layout; map content to appropriate regions.
  */
-function template_preprocess_panels_frame_stack(&$vars) {}
+function template_preprocess_panels_frame_stack(&$vars) {
+  dpm($vars,'vars');
+  $original_renderer = $vars['renderer'];
+
+  foreach ($vars['display']->panels_frame as $name => $frame) {
+    $temp_display = clone $vars['display'];
+    unset($temp_display->panels_frame);
+    $temp_display->layout = $frame['layout'];
+
+    $renderer = panels_get_renderer_handler($vars['display']->renderer, $temp_display);
+    foreach ($frame['regions'] as $region => $data) {
+      $renderer->rendered['regions'][$region] = $original_renderer->rendered['regions'][$name . '_' . $region];
+    }
+
+    // hook_panels_pre_render
+    // $renderer->add_meta();
+    // Determine renderer theme
+    // $renderer->prefix
+    // theme('layout')
+    // $renderer->suffix
+    // hook_panels_post_render
+    // @todo but how will this work with the Editor/IPE Renderers?
+
+    // Clone Display
+    //  - curate content
+    //  - curate panels
+    //  - clear css_id (css_id will be applicable to wrapper div)
+    //  - update layout
+    //  - curate layout_settings
+    //  - curate panel_settings
+    //  - set skip_cache TRUE
+    //  - remove panels_frame
+    // Re-create Renderer
+    //  - $renderer = panels_get_renderer_handler($engine);
+    //  - curate/copy over prepared panes and regions
+    //  - curate/copy over rendered panes and regions
+    //  - Patch Panels to check for $renderer->rendered[regions] and $renderer->rendered[panes] before trying to render
+    //  - Worry about using the Pane title as the Page title. Maybe.
+    $vars['frames'][$name] = $output;
+  }
+}
 
 function theme_panels_frame_stack($vars) {
-  $o  = '<div>';
-  $o .=   '<div class="leeft">' . $vars['content']['leeft'] . '</div>';
-  $o .=   '<div class="riight">' . $vars['content']['riight'] . '</div>';
-  $o .= '</div>';
-  return $o;
+  $output = '';
+  foreach ($vars['layout']['regions'] as $name => $label) {
+    $output .= '<div class="xxregion-' . $name . '">' . $vars['content'][$name] . '</div>';
+  }
+
+  return $output;
 }

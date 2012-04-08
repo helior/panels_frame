@@ -4,6 +4,8 @@
  * @todo Build schema for persisting children layouts.
  * @todo Use Ctools Export API for retrieval of children layouts.
  * @todo Build UI for creating "stacks".
+ * @todo Implement hook_panels_dashboard_blocks().
+ * @todo Respect the panels_allowed_layouts class for UI.
  */
 /**
  * Implements hook_menu().
