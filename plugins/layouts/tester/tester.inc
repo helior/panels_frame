@@ -25,7 +25,6 @@ function panels_frame_tester_regions(&$display, $settings, $layout) {
 }
 
 function theme_panels_frame_tester($vars) {
-  // dpm($vars, 'vars');
   $output = '<div class="tester">';
 
   foreach ($vars['layout']['regions'] as $name => $label) {

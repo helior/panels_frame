@@ -82,51 +82,103 @@ function panels_frame_stack_region(&$display, $settings, $base_layout) {
  */
 function template_preprocess_panels_frame_stack(&$vars) {
   dpm($vars,'vars');
-  $original_renderer = $vars['renderer'];
+  $output = '';
+  $renderer = $vars['renderer'];
 
   foreach ($vars['display']->panels_frame as $name => $frame) {
-    $temp_display = clone $vars['display'];
-    unset($temp_display->panels_frame);
-    $temp_display->layout = $frame['layout'];
+    $panels = $content = $prepared = $rendered = array();
 
-    $renderer = panels_get_renderer_handler($vars['display']->renderer, $temp_display);
-    foreach ($frame['regions'] as $region => $data) {
-      $renderer->rendered['regions'][$region] = $original_renderer->rendered['regions'][$name . '_' . $region];
+    // Deep copy of the original display
+    $display = unserialize(serialize($vars['display']));
+
+    // Frame metadata isn't necessary in nested displays
+    unset($display->panels_frame);
+
+    // Let the display know the /real/ layout
+    $display->layout = $frame['layout'];
+
+    // Prevent the css ID to propogate to nested displays.
+    $display->css_id = NULL;
+
+    // Skip cache at this scope since the parent display can handle itself.
+    $display->skip_cache = TRUE;
+
+    // Loop through each region of the nested layout and map content values
+    // accordingly.
+    foreach (array_keys($frame['regions']) as $region) {
+      $pseudo_region = $name . '_' . $region;
+
+      // Map display regions back to display in their "original" form.
+      if (isset($display->panels[$pseudo_region])) {
+        $panels[$region] = $display->panels[$pseudo_region];
+
+        // Map each piece of content within the regions back to their "original" form.
+        foreach ($panels[$region] as $pid) {
+          $content[$pid] = $display->content[$pid];
+
+          // Also update the pane's reference to their assigned region.
+          $content[$pid]->panel = $region;
+        }
+      }
+
+      // Map renderer's prepared/rendered values
+      $rendered['regions'][$region] = $renderer->rendered['regions'][$pseudo_region];
+      $prepared['regions'][$region] = $renderer->prepared['regions'][$pseudo_region];
+
+      foreach ($prepared['regions'][$region]['pids'] as $pid) {
+        $rendered['panes'][$pid] = $renderer->rendered['panes'][$pid];
+        $prepared['panes'][$pid] = $renderer->prepared['panes'][$pid];
+        $prepared['panes'][$pid]->panel = $region;
+      }
     }
 
-    // hook_panels_pre_render
-    // $renderer->add_meta();
-    // Determine renderer theme
-    // $renderer->prefix
-    // theme('layout')
-    // $renderer->suffix
-    // hook_panels_post_render
-    // @todo but how will this work with the Editor/IPE Renderers?
+    $display->panels = $panels;
+    $display->content = $content;
+
+    $new_renderer = panels_get_renderer_handler($renderer->plugin['name'], $display);
+    $new_renderer->prepared = $prepared;
+    $new_renderer->rendered = $rendered;
+    $new_renderer->prep_run = TRUE;
+    $vars['frames'][$name] = panels_render_display($display, $new_renderer);
+
+    // $renderer = panels_get_renderer_handler($display->renderer, $display);
+    // foreach ($frame['regions'] as $region => $data) {
+    //   $renderer->rendered['regions'][$region] = $original_renderer->rendered['regions'][$name . '_' . $region];
+    // }
 
     // Clone Display
-    //  - curate content
-    //  - curate panels
-    //  - clear css_id (css_id will be applicable to wrapper div)
-    //  - update layout
+    //  -+ curate content
+    //  -+ curate panels
+    //  -+ clear css_id (css_id will be applicable to wrapper div)
+    //  -+ update layout
     //  - curate layout_settings
     //  - curate panel_settings
-    //  - set skip_cache TRUE
-    //  - remove panels_frame
+    //  -+ set skip_cache TRUE
+    //  -+ remove panels_frame
     // Re-create Renderer
-    //  - $renderer = panels_get_renderer_handler($engine);
-    //  - curate/copy over prepared panes and regions
-    //  - curate/copy over rendered panes and regions
+    //  -+ $renderer = panels_get_renderer_handler($engine);
+    //  -+ curate/copy over prepared panes and regions
+    //  -+ curate/copy over rendered panes and regions
     //  - Patch Panels to check for $renderer->rendered[regions] and $renderer->rendered[panes] before trying to render
     //  - Worry about using the Pane title as the Page title. Maybe.
-    $vars['frames'][$name] = $output;
   }
+  // dpm($vars,'vars');
 }
 
 function theme_panels_frame_stack($vars) {
   $output = '';
-  foreach ($vars['layout']['regions'] as $name => $label) {
-    $output .= '<div class="xxregion-' . $name . '">' . $vars['content'][$name] . '</div>';
+
+  $output .= '<div class="panels-frame">';
+  foreach ($vars['frames'] as $name => $content) {
+    $output .= '<div class="frame-' . $name . '">' . $content . '</div>';
   }
+  $output .= '</div>';
+
+  // $output .= '<hr />';
+  //
+  // foreach ($vars['content'] as $content) {
+  //   $output .= $content;
+  // }
 
   return $output;
 }
