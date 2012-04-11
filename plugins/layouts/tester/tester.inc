@@ -7,12 +7,14 @@ $plugin = array(
   'regions function' => 'panels_frame_tester_regions',
   'theme' => 'panels_frame_tester',
   'settings form' => 'panels_frame_tester_settings',
+  'icon' => '',
 );
 
 function panels_frame_tester_settings(&$display, $layout, $settings) {
   $form['test'] = array(
     '#type' => 'textfield',
     '#title' => 'test',
+    '#default_value' => isset($settings['test']) ? $settings['test'] : '',
   );
   return $form;
 }
@@ -25,6 +27,7 @@ function panels_frame_tester_regions(&$display, $settings, $layout) {
 }
 
 function theme_panels_frame_tester($vars) {
+  dpm($vars);
   $output = '<div class="tester">';
 
   foreach ($vars['layout']['regions'] as $name => $label) {

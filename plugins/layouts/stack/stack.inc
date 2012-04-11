@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @todo Find out why Layout changer is broken with Stack.
+ */
+
 $plugin = array(
   'title' => t('Frame: Stack'),
   'category' => t('Builders'),
@@ -10,6 +14,8 @@ $plugin = array(
   // 'get children' => 'panels_frame_stack_get_sublayouts',
   'regions function' => 'panels_frame_stack_region',
   'theme' => 'panels_frame_stack',
+  'admin css' => 'stack.admin.css',
+  'settings form' => 'panels_frame_stack_settings',
 );
 
 // function panels_frame_stack_fake_layout($name, $plugin) {
@@ -31,6 +37,9 @@ function panels_frame_stack_fake_frames() {
     'second' => array(
       'layout' => 'threecol_25_50_25',
     ),
+    'third' => array(
+      'layout' => 'tester',
+    ),
   );
 }
 
@@ -50,6 +59,22 @@ function panels_frame_stack_fake_frames() {
 // }
 
 /**
+ * Settings form builder.
+ */
+function panels_frame_stack_settings(&$display, $layout, $settings) {
+  foreach ($display->panels_frame as $name => $frame) {
+    if (!empty($frame['plugin']['settings form']) && function_exists($frame['plugin']['settings form'])) {
+      $form[$name] = array(
+        '#type' => 'fieldset',
+        '#title' => t('@label settings', array('@label' => $frame['plugin']['title'] . ' (' . $name . ')')),
+      ) + $frame['plugin']['settings form']($display, $frame['plugin'], isset($settings[$name]) ? $settings[$name] : array());
+    }
+  }
+
+  return $form;
+}
+
+/**
  * Regions callback.
  * Collect the regions from the compiled layouts.
  */
@@ -66,8 +91,9 @@ function panels_frame_stack_region(&$display, $settings, $base_layout) {
 
     $frame['plugin'] = panels_get_layout($frame['layout']);
 
+    // @todo inspect panel settings in $display. This might be broken.
     foreach (panels_get_regions($frame['plugin'], $display) as $region => $label) {
-      $frame['regions'][$region]['region'] = $region;
+      $frame['regions'][$region]['region'] = $frame['plugin']['regions'][$region] = $label;
       $regions[$name . '_' . $region] = $label;
     }
 
@@ -85,20 +111,17 @@ function template_preprocess_panels_frame_stack(&$vars) {
   panels_frame_stack_distribute_layout_content($vars);
 }
 
+/**
+ * Theme callback for stack layout.
+ */
 function theme_panels_frame_stack($vars) {
   $output = '';
 
   $output .= '<div class="panels-frame">';
   foreach ($vars['frames'] as $name => $content) {
-    $output .= '<div class="frame-' . $name . '">' . $content . '</div>';
+    $output .= '<div class="frame clearfix frame-' . $name . '">' . $content . '</div>';
   }
   $output .= '</div>';
-
-  // $output .= '<hr />';
-  //
-  // foreach ($vars['content'] as $content) {
-  //   $output .= $content;
-  // }
 
   return $output;
 }
@@ -109,9 +132,8 @@ function panels_frame_stack_distribute_layout_content(&$vars) {
   $renderer_layout = $vars['renderer']->plugins['layout'];
 
   foreach ($vars['display']->panels_frame as $name => $frame) {
-    $content = $settings = array();
-
     // Distribute content
+    $content = array();
     foreach (array_keys($frame['regions']) as $region) {
       $key = $name . '_' . $region;
       $content[$region] = $vars['content'][$key];
@@ -125,12 +147,12 @@ function panels_frame_stack_distribute_layout_content(&$vars) {
       $theme = $frame['plugin']['theme'];
     }
 
-    $vars['frames'][$name] = '';
     $vars['renderer']->prefix = '';
     $vars['renderer']->plugins['layout'] = $frame['plugin'];
 
     $vars['renderer']->add_meta();
-    $vars['frames'][$name] = $vars['renderer']->prefix . theme($theme, array('content' => $content, 'display' => $vars['display'], 'layout' => $frame['plugin'], 'renderer' => $vars['renderer']));
+    $settings = isset($vars['display']->layout_settings[$name]) ? $vars['display']->layout_settings[$name] : array();
+    $vars['frames'][$name] = $vars['renderer']->prefix . theme($theme, array('content' => $content, 'settings' => $settings, 'display' => $vars['display'], 'layout' => $frame['plugin'], 'renderer' => $vars['renderer']));
   }
 
   $vars['renderer']->prefix = $renderer_prefix;
