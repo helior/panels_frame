@@ -81,8 +81,84 @@ function panels_frame_stack_region(&$display, $settings, $base_layout) {
  * @todo render each individual sub-layout; map content to appropriate regions.
  */
 function template_preprocess_panels_frame_stack(&$vars) {
-  dpm($vars,'vars');
+  // panels_frame_stack_synthesized_display_renderer($vars);
+  panels_frame_stack_distribute_layout_content($vars);
+}
+
+function theme_panels_frame_stack($vars) {
   $output = '';
+
+  $output .= '<div class="panels-frame">';
+  foreach ($vars['frames'] as $name => $content) {
+    $output .= '<div class="frame-' . $name . '">' . $content . '</div>';
+  }
+  $output .= '</div>';
+
+  // $output .= '<hr />';
+  //
+  // foreach ($vars['content'] as $content) {
+  //   $output .= $content;
+  // }
+
+  return $output;
+}
+
+function panels_frame_stack_distribute_layout_content(&$vars) {
+  // Back-up original renderer prefix for the encompassing layout render
+  $renderer_prefix = $vars['renderer']->prefix;
+  $renderer_layout = $vars['renderer']->plugins['layout'];
+
+  foreach ($vars['display']->panels_frame as $name => $frame) {
+    $content = $settings = array();
+
+    // Distribute content
+    foreach (array_keys($frame['regions']) as $region) {
+      $key = $name . '_' . $region;
+      $content[$region] = $vars['content'][$key];
+    }
+
+    // Choose theme
+    if ($vars['renderer']->admin && !empty($frame['plugin']['admin theme'])) {
+      $theme = $frame['plugin']['admin theme'];
+    }
+    else {
+      $theme = $frame['plugin']['theme'];
+    }
+
+    $vars['frames'][$name] = '';
+    $vars['renderer']->prefix = '';
+    $vars['renderer']->plugins['layout'] = $frame['plugin'];
+
+    $vars['renderer']->add_meta();
+    $vars['frames'][$name] = $vars['renderer']->prefix . theme($theme, array('content' => $content, 'display' => $vars['display'], 'layout' => $frame['plugin'], 'renderer' => $vars['renderer']));
+  }
+
+  $vars['renderer']->prefix = $renderer_prefix;
+  $vars['renderer']->plugins['layout'] = $renderer_layout;
+}
+
+/**
+ * Create clones of original display objects to make Panels believe that they
+ * are rendering original layouts. This breaks using the editor renderer since
+ * it renders each layout with an hard-coded ID.
+ */
+function panels_frame_stack_synthesized_display_renderer(&$vars) {
+  // Clone Display
+  //  -+ curate content
+  //  -+ curate panels
+  //  -+ clear css_id (css_id will be applicable to wrapper div)
+  //  -+ update layout
+  //  - curate layout_settings
+  //  - curate panel_settings
+  //  -+ set skip_cache TRUE
+  //  -+ remove panels_frame
+  // Re-create Renderer
+  //  -+ $renderer = panels_get_renderer_handler($engine);
+  //  -+ curate/copy over prepared panes and regions
+  //  -+ curate/copy over rendered panes and regions
+  //  - Patch Panels to check for $renderer->rendered[regions] and $renderer->rendered[panes] before trying to render
+  //  - Worry about using the Pane title as the Page title. Maybe.
+
   $renderer = $vars['renderer'];
 
   foreach ($vars['display']->panels_frame as $name => $frame) {
@@ -140,45 +216,5 @@ function template_preprocess_panels_frame_stack(&$vars) {
     $new_renderer->rendered = $rendered;
     $new_renderer->prep_run = TRUE;
     $vars['frames'][$name] = panels_render_display($display, $new_renderer);
-
-    // $renderer = panels_get_renderer_handler($display->renderer, $display);
-    // foreach ($frame['regions'] as $region => $data) {
-    //   $renderer->rendered['regions'][$region] = $original_renderer->rendered['regions'][$name . '_' . $region];
-    // }
-
-    // Clone Display
-    //  -+ curate content
-    //  -+ curate panels
-    //  -+ clear css_id (css_id will be applicable to wrapper div)
-    //  -+ update layout
-    //  - curate layout_settings
-    //  - curate panel_settings
-    //  -+ set skip_cache TRUE
-    //  -+ remove panels_frame
-    // Re-create Renderer
-    //  -+ $renderer = panels_get_renderer_handler($engine);
-    //  -+ curate/copy over prepared panes and regions
-    //  -+ curate/copy over rendered panes and regions
-    //  - Patch Panels to check for $renderer->rendered[regions] and $renderer->rendered[panes] before trying to render
-    //  - Worry about using the Pane title as the Page title. Maybe.
   }
-  // dpm($vars,'vars');
-}
-
-function theme_panels_frame_stack($vars) {
-  $output = '';
-
-  $output .= '<div class="panels-frame">';
-  foreach ($vars['frames'] as $name => $content) {
-    $output .= '<div class="frame-' . $name . '">' . $content . '</div>';
-  }
-  $output .= '</div>';
-
-  // $output .= '<hr />';
-  //
-  // foreach ($vars['content'] as $content) {
-  //   $output .= $content;
-  // }
-
-  return $output;
 }
