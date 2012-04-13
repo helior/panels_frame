@@ -8,8 +8,8 @@ $plugin = array(
   'title' => t('Frame: Stack'),
   'category' => t('Builders'),
   'icon' => 'envelope.png',
-  // 'builder' => TRUE,
-  // 'builder tab title' => 'Stack this mother effers!',
+  'builder' => TRUE,
+  'builder tab title' => 'Stack this mother effers!',
   // 'get child' => 'panels_frame_stack_get_sublayout',
   // 'get children' => 'panels_frame_stack_get_sublayouts',
   'regions function' => 'panels_frame_stack_region',
@@ -91,10 +91,9 @@ function panels_frame_stack_region(&$display, $settings, $base_layout) {
 
     $frame['plugin'] = panels_get_layout($frame['layout']);
 
-    // @todo inspect panel settings in $display. This might be broken.
     foreach (panels_get_regions($frame['plugin'], $display) as $region => $label) {
       $frame['regions'][$region]['region'] = $frame['plugin']['regions'][$region] = $label;
-      $regions[$name . '_' . $region] = $label;
+      $regions[$name . '__' . $region] = $label;
     }
 
     $display->panels_frame[$name] = $frame;
@@ -104,11 +103,23 @@ function panels_frame_stack_region(&$display, $settings, $base_layout) {
 }
 
 /**
- * @todo render each individual sub-layout; map content to appropriate regions.
+ * Implements template_preprocess_HOOK().
+ * @see theme_panels_frame_stack().
  */
 function template_preprocess_panels_frame_stack(&$vars) {
-  // panels_frame_stack_synthesized_display_renderer($vars);
   panels_frame_stack_distribute_layout_content($vars);
+
+  $vars['attributes_array']['id'] = $vars['css_id'];
+  $vars['attributes_array']['class'][] = 'panels-frame';
+}
+
+/**
+ * Implements template_process_HOOK().
+ * @see theme_panels_frame_stack().
+ */
+
+function template_process_panels_frame_stack(&$vars) {
+  $vars['attributes'] = drupal_attributes($vars['attributes_array']);
 }
 
 /**
@@ -117,13 +128,12 @@ function template_preprocess_panels_frame_stack(&$vars) {
 function theme_panels_frame_stack($vars) {
   $output = '';
 
-  $output .= '<div class="panels-frame">';
   foreach ($vars['frames'] as $name => $content) {
     $output .= '<div class="frame clearfix frame-' . $name . '">' . $content . '</div>';
   }
-  $output .= '</div>';
 
-  return $output;
+  return '<div' . $vars['attributes'] . '>' . $output . '</div>';
+  // return "<div{$vars['attributes']}>$output</div>";
 }
 
 function panels_frame_stack_distribute_layout_content(&$vars) {
@@ -135,7 +145,7 @@ function panels_frame_stack_distribute_layout_content(&$vars) {
     // Distribute content
     $content = array();
     foreach (array_keys($frame['regions']) as $region) {
-      $key = $name . '_' . $region;
+      $key = $name . '__' . $region;
       $content[$region] = $vars['content'][$key];
     }
 
@@ -157,86 +167,4 @@ function panels_frame_stack_distribute_layout_content(&$vars) {
 
   $vars['renderer']->prefix = $renderer_prefix;
   $vars['renderer']->plugins['layout'] = $renderer_layout;
-}
-
-/**
- * Create clones of original display objects to make Panels believe that they
- * are rendering original layouts. This breaks using the editor renderer since
- * it renders each layout with an hard-coded ID.
- */
-function panels_frame_stack_synthesized_display_renderer(&$vars) {
-  // Clone Display
-  //  -+ curate content
-  //  -+ curate panels
-  //  -+ clear css_id (css_id will be applicable to wrapper div)
-  //  -+ update layout
-  //  - curate layout_settings
-  //  - curate panel_settings
-  //  -+ set skip_cache TRUE
-  //  -+ remove panels_frame
-  // Re-create Renderer
-  //  -+ $renderer = panels_get_renderer_handler($engine);
-  //  -+ curate/copy over prepared panes and regions
-  //  -+ curate/copy over rendered panes and regions
-  //  - Patch Panels to check for $renderer->rendered[regions] and $renderer->rendered[panes] before trying to render
-  //  - Worry about using the Pane title as the Page title. Maybe.
-
-  $renderer = $vars['renderer'];
-
-  foreach ($vars['display']->panels_frame as $name => $frame) {
-    $panels = $content = $prepared = $rendered = array();
-
-    // Deep copy of the original display
-    $display = unserialize(serialize($vars['display']));
-
-    // Frame metadata isn't necessary in nested displays
-    unset($display->panels_frame);
-
-    // Let the display know the /real/ layout
-    $display->layout = $frame['layout'];
-
-    // Prevent the css ID to propogate to nested displays.
-    $display->css_id = NULL;
-
-    // Skip cache at this scope since the parent display can handle itself.
-    $display->skip_cache = TRUE;
-
-    // Loop through each region of the nested layout and map content values
-    // accordingly.
-    foreach (array_keys($frame['regions']) as $region) {
-      $pseudo_region = $name . '_' . $region;
-
-      // Map display regions back to display in their "original" form.
-      if (isset($display->panels[$pseudo_region])) {
-        $panels[$region] = $display->panels[$pseudo_region];
-
-        // Map each piece of content within the regions back to their "original" form.
-        foreach ($panels[$region] as $pid) {
-          $content[$pid] = $display->content[$pid];
-
-          // Also update the pane's reference to their assigned region.
-          $content[$pid]->panel = $region;
-        }
-      }
-
-      // Map renderer's prepared/rendered values
-      $rendered['regions'][$region] = $renderer->rendered['regions'][$pseudo_region];
-      $prepared['regions'][$region] = $renderer->prepared['regions'][$pseudo_region];
-
-      foreach ($prepared['regions'][$region]['pids'] as $pid) {
-        $rendered['panes'][$pid] = $renderer->rendered['panes'][$pid];
-        $prepared['panes'][$pid] = $renderer->prepared['panes'][$pid];
-        $prepared['panes'][$pid]->panel = $region;
-      }
-    }
-
-    $display->panels = $panels;
-    $display->content = $content;
-
-    $new_renderer = panels_get_renderer_handler($renderer->plugin['name'], $display);
-    $new_renderer->prepared = $prepared;
-    $new_renderer->rendered = $rendered;
-    $new_renderer->prep_run = TRUE;
-    $vars['frames'][$name] = panels_render_display($display, $new_renderer);
-  }
 }

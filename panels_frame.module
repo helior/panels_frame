@@ -1,33 +1,51 @@
 <?php
 
 /**
- * @todo Build schema for persisting children layouts.
  * @todo Use Ctools Export API for retrieval of children layouts.
  * @todo Build UI for creating "stacks".
  * @todo Implement hook_panels_dashboard_blocks().
- * @todo Respect the panels_allowed_layouts class for UI.
+ * @todo Create an abstract export_ui class
+ * @todo Validate the 'category' field in builder @see panels_mini_ui.class.php
  */
+
+ /**
+  * Implements hook_ctools_plugin_directory().
+  */
+ function panels_frame_ctools_plugin_directory($module, $plugin) {
+   if (($module == 'panels' && $plugin == 'layouts') || $module == 'ctools' && $plugin == 'export_ui') {
+     return "plugins/$plugin";
+   }
+ }
+
 /**
  * Implements hook_menu().
  */
 function panels_frame_menu() {
   $items['admin/structure/panels/frame'] = array(
     'title' => 'Frame',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('panels_frame_temp_admin'),
-    'access arguments' => array('use panels dashboard'),
-    'file' => 'panels_frame.admin.inc',
+    'description' => 'General system related configuration.',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer panels frame'),
+    'file path' => drupal_get_path('module', 'system'),
+    'file' => 'system.admin.inc',
   );
 
   return $items;
 }
 
-
 /**
- * Implements hook_ctools_plugin_directory().
+ * Implements hook_permission()
  */
-function panels_frame_ctools_plugin_directory($module, $plugin) {
-  if ($module == 'panels' && $plugin == 'layouts') {
-    return "plugins/$plugin";
-  }
+function panels_frame_permission() {
+  return array(
+    'administer panels frame' => array(
+      'title' => t("Use the Panels Frame UI"),
+      'description' => t("Allows a user to build new layouts using the Panels Frame UI."),
+    ),
+  );
+}
+
+
+function panels_frame_choose_layout() {
+  module_load_include('inc', 'panels_frame', 'panels_frame.admin');
 }

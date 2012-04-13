@@ -7,7 +7,7 @@ $plugin = array(
   'regions function' => 'panels_frame_tester_regions',
   'theme' => 'panels_frame_tester',
   'settings form' => 'panels_frame_tester_settings',
-  'icon' => '',
+  'icon' => 'hong-kong.gif',
 );
 
 function panels_frame_tester_settings(&$display, $layout, $settings) {
@@ -27,7 +27,6 @@ function panels_frame_tester_regions(&$display, $settings, $layout) {
 }
 
 function theme_panels_frame_tester($vars) {
-  dpm($vars);
   $output = '<div class="tester">';
 
   foreach ($vars['layout']['regions'] as $name => $label) {

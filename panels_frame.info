@@ -3,4 +3,5 @@ description = Stacks multiple Panels layouts together.
 package = Panels
 core = 7.x
 
+dependencies[] = ctools
 dependencies[] = panels

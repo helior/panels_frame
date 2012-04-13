@@ -1,0 +1,72 @@
+<?php
+
+/**
+ * @file
+ * Schema definition.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function panels_frame_schema() {
+  $schema['panels_frame'] = array(
+    'description' => 'Contains exportable compilations of layouts',
+    'fields' => array(
+      'pfid' => array(
+        'type' => 'serial',
+        'description' => 'Obligatory primary key.',
+        'not null' => TRUE,
+        'no export' => TRUE,
+      ),
+      'label' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'description' => 'Human-readable name for this layout.',
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'description' => 'Machine-readable name for happy programming.',
+      ),
+      'description' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'description' => 'A place for commentary and description to this layout.',
+        'object default' => '',
+      ),
+      'category' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'description' => 'Administrative category for this layout.',
+      ),
+      'data' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'description' => 'A heap of data.',
+        'serialize' => TRUE,
+        'object default' => array(),
+      ),
+      'settings' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'description' => 'Settings, in case we need them.',
+        'serialize' => TRUE,
+        'object default' => array(),
+      ),
+    ),
+    'export' => array(
+      'admin_title' => 'label',
+      'admin_description' => 'description',
+      'api' => array(
+        'owner' => 'panels',
+        'api' => 'layouts',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'primary key' => array('pfid'),
+  );
+
+  return $schema;
+}
+
