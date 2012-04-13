@@ -43,6 +43,8 @@ class panels_frame_stack_ui extends ctools_export_ui {
   }
 
   function edit_form(&$form, &$form_state) {
+    // $form['helior'] = panels_frame_choose_layout($form, $form_state);
+
     parent::edit_form($form, $form_state);
 
     ctools_include('ajax');
