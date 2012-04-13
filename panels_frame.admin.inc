@@ -28,31 +28,71 @@ function panels_frame_stack_frame_add($form, &$form_state) {
   ctools_include('display-layout', 'panels');
   ctools_include('plugins', 'panels');
 
-  // @todo -- figure out where/how to deal with this.
-  $form_state['allowed_layouts'] = 'panels_frame';
-
-  // Obligitory Display object
-  $form_state['display'] = panels_new_display();
-
-  // Tell the Panels form not to display buttons.
-  $form_state['no buttons'] = TRUE;
-
-  // Change the #id of the form so the CSS applies properly.
-  $form['#id'] = 'panels-choose-layout';
-
-  $form = panels_choose_layout($form, $form_state);
+  $form = panels_frame_choose_layout_form($form, $form_state);
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => 'Submit',
+    '#value' => t('Save'),
   );
 
   return $form;
 }
 
+/**
+ * Validation callback for 'panels_frame_stack_frame_add'.
+ */
 function panels_frame_stack_frame_add_validate(&$form, &$form_state) {
   // dpm($form_state,'state');
   if (empty($form_state['values']['layout'])) {
     form_set_error('layout', 'wtf man?');
   }
+}
+
+function panels_frame_choose_layout_form($form, &$form_state) {
+  ctools_include('common', 'panels');
+  ctools_include('cleanstring');
+
+  $groups = array();
+  $id = drupal_html_id('panels-frame-choose-layout');
+
+  $allowed_layouts = $form_state['allowed_layouts'] ? $form_state['allowed_layouts'] : 'panels_frame';
+  $layouts = panels_common_get_allowed_layouts($allowed_layouts);
+
+  $groups = array();
+  foreach ($layouts as $lid => $layout) {
+    $key = ctools_cleanstring($layout['category']);
+    $groups[$key]['category'] = $layout['category'];
+    $groups[$key]['layouts'][] = $lid;
+  }
+
+  $form['layout'] = array(
+    '#type' => 'container',
+    '#attributes' => array('id' => $id)
+  );
+
+  $form['layout']['header'] = array(
+    '#theme' => 'item_list',
+    '#items' => array(),
+  );
+
+  foreach ($groups as $name => $group) {
+    $key = drupal_html_id($name);
+    $form['layout']['header']['#items'][] = '<a href="#' . $key . '">' . $group['category'] . '</a>';
+    $form['layout']['content'][$name] = array(
+      '#type' => 'container',
+      '#attributes' => array('id' => $key),
+    );
+
+    foreach ($group['layouts'] as $lid) {
+      $form['layout']['content'][$name][$lid] = array(
+        '#type' => 'radio',
+        '#title' => $layouts[$lid]['title'],
+        '#parents' => array('layout'),
+        '#id' => drupal_clean_css_identifier('edit-layout-' . $lid),
+        '#default_value' => $form_state['values']['layout'] == $lid,
+      );
+    }
+  }
+
+  return $form;
 }

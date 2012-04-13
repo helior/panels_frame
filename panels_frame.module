@@ -46,6 +46,7 @@ function panels_frame_permission() {
 }
 
 
-function panels_frame_choose_layout() {
+function panels_frame_choose_layout($form, &$form_state) {
   module_load_include('inc', 'panels_frame', 'panels_frame.admin');
+  return panels_frame_choose_layout_form($form, &$form_state);
 }
