@@ -1,4 +1,3 @@
-
 (function($) {
   Drupal.behaviors.panelsFrameChooseLayout = {
     attach: function(context, settings) {

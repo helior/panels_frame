@@ -2,8 +2,11 @@
 
 $plugin = array(
   'schema' => 'panels_frame',
-  'handler' => 'panels_frame_stack_ui',
   'access' => 'administer panels frame',
+  'handler' => array(
+    'class' => 'panels_frame_stack_ui',
+    'parent' => 'panels_frame_ui',
+  ),
 
   'menu' => array(
     'menu prefix' => 'admin/structure/panels/frame',
@@ -16,4 +19,12 @@ $plugin = array(
   'title singular proper' => t('Stack'),
   'title plural' => t('stacks'),
   'title plural proper' => t('Stacks'),
+
+  'use wizard' => TRUE,
+  'form info' => array(
+    'show trail' => FALSE,
+    'order' => array(
+      'basic' => t('Basic information'),
+    ),
+  ),
 );

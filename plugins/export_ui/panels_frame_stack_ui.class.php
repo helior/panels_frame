@@ -1,6 +1,6 @@
 <?php
 
-class panels_frame_stack_ui extends ctools_export_ui {
+class panels_frame_stack_ui extends panels_frame_ui {
 
   function hook_menu(&$items) {
     $base = array(
@@ -17,72 +17,35 @@ class panels_frame_stack_ui extends ctools_export_ui {
 
     parent::hook_menu($items);
   }
-  function list_form(&$form, &$form_state) {
-    parent::list_form($form, $form_state);
-
-    $options = array('all' => t('- All -'));
-    foreach ($this->items as $item) {
-      $options[$item->category] = $item->category;
-    }
-
-    $form['top row']['category'] = array(
-      '#type' => 'select',
-      '#title' => t('Category'),
-      '#options' => $options,
-      '#default_value' => 'all',
-      '#weight' => -10,
-    );
-  }
-
-  function list_filter($form_state, $item) {
-    if ($form_state['values']['category'] != 'all' && $form_state['values']['category'] != $item->category) {
-      return TRUE;
-    }
-
-    return parent::list_filter($form_state, $item);
-  }
 
   function edit_form(&$form, &$form_state) {
-    // $form['helior'] = panels_frame_choose_layout($form, $form_state);
-
     parent::edit_form($form, $form_state);
-
+    ctools_include('plugins', 'panels');
     ctools_include('ajax');
     ctools_include('modal');
     ctools_modal_add_js();
     ctools_add_css('panels_dnd', 'panels');
 
-    $form['info']['label']['#title'] = t('Label');
-    $form['info']['label']['#size'] = 30;
-    $form['info']['name']['#size'] = 30;
-
-    $form['info']['description']['#rows'] = 2;
-    $form['info']['description']['#resizable'] = FALSE;
-
-    $form['info']['category'] = array(
-      '#type' => 'textfield',
-      '#size' => 24,
-      '#default_value' => $form_state['item']->category,
-      '#title' => t('Category'),
-      '#description' => t('What category this layout should appear in. If left blank the category will be "Miscellaneous".'),
-    );
+    $cache_mechanism = 'export_ui::' . $form_state['plugin']['name'];
 
     $form['frames'] = array('#type' => 'fieldset');
     $form['frames']['data'] = array(
+      '#element_validate' => array('panels_frame_stack_ui_frames_sort'),
       '#after_build' => array('panels_frame_stack_ui_frames_after_build'),
       '#tree' => TRUE,
     );
 
     $fake = $this->fake_elements();
     foreach ($form_state['item']->data as $name => $frame) {
+      $layout = panels_get_layout($fake[$name]['layout']);
       // Preview
       $form['frames']['data'][$name]['preview'] = array(
-        '#markup' => $fake[$name]['preview'],
+        '#markup' => panels_print_layout_icon($layout['name'], $layout),
       );
 
       // Title
       $form['frames']['data'][$name]['title'] = array(
-        '#markup' => $fake[$name]['layout'] . '(' . $name . ')',
+        '#markup' => $layout['title'] . '<br>(' . $name . ')',
       );
 
       // Weight
@@ -110,29 +73,20 @@ class panels_frame_stack_ui extends ctools_export_ui {
     $form['frames']['add-url'] = array(
       '#attributes' => array('class' => array("panels-frame-stack-frame-add-url")),
       '#type' => 'hidden',
-      '#value' => url('panels_frame/ajax/stack/frame/add', array('absolute' => TRUE)),
+      '#value' => url('panels_frame/ajax/stack/frame/add/' . $cache_mechanism . '/' . $form_state['item']->name, array('absolute' => TRUE)),
     );
-  }
-
-  function edit_form_validate(&$form, &$form_state) {
-    parent::edit_form_validate($form, $form_state);
-
-    uasort($form_state['values']['data'], 'drupal_sort_weight');
   }
 
   function fake_elements() {
     return array(
       'first' => array(
-        'layout' => 'Three Column Stacked',
-        'preview' => '(☞ﾟヮﾟ)☞',
+        'layout' => 'threecol_25_50_25_stacked',
       ),
       'second' => array(
-        'layout' => 'One Column',
-        'preview' => '(•ω•)',
+        'layout' => 'twocol',
       ),
       'third' => array(
-        'layout' => 'Two Column Hipster',
-        'preview' => 'ヽ(´ｰ｀ )ﾉ',
+        'layout' => 'twocol_bricks',
       ),
     );
   }
