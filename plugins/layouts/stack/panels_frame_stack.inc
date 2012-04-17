@@ -1,67 +1,58 @@
 <?php
 
-/**
- * @todo Find out why Layout changer is broken with Stack.
- */
-
 $plugin = array(
-  'title' => t('Frame: Stack'),
+  'title' => t('Panels Frame Stack'),
   'category' => t('Builders'),
   'icon' => 'envelope.png',
-  'builder' => TRUE,
-  'builder tab title' => 'Stack this mother effers!',
-  // 'get child' => 'panels_frame_stack_get_sublayout',
-  // 'get children' => 'panels_frame_stack_get_sublayouts',
+  'get child' => 'panels_frame_stack_get_sublayout',
+  'get children' => 'panels_frame_stack_get_sublayouts',
   'regions function' => 'panels_frame_stack_region',
   'theme' => 'panels_frame_stack',
   'admin css' => 'stack.admin.css',
   'settings form' => 'panels_frame_stack_settings',
 );
 
-// function panels_frame_stack_fake_layout($name, $plugin) {
-//   return array(
-//     'name' => $name,
-//     'category' => 'Frame: Stack',
-//     'title' => ucfirst($name),
-//     'description' => $name . ' is a "Stack" instance',
-//     'builder' => FALSE,
-//     'builder tabe title' => NULL,
-//   ) + $plugin;
-// }
-
-function panels_frame_stack_fake_frames() {
-  return array(
-    'first' => array(
-      'layout' => 'twocol',
-    ),
-    'second' => array(
-      'layout' => 'threecol_25_50_25',
-    ),
-    'third' => array(
-      'layout' => 'tester',
-    ),
-  );
+/**
+ * Get child callback.
+ */
+function panels_frame_stack_get_sublayout($plugin, $layout_name, $sublayout_name) {
+  ctools_include('export');
+  if ($item = ctools_export_crud_load('panels_frame', $sublayout_name)) {
+    return panels_frame_stack_child_plugin($plugin, $item);
+  }
 }
 
-// function panels_frame_stack_get_sublayout($plugin, $layout_name, $sublayout_name) {
-//   // @todo this should load from Ctools Export/CRUD API
-//   return panels_frame_stack_fake_layout('bob', $plugin);
-// }
-//
-// function panels_frame_stack_get_sublayouts($plugin, $layout_name) {
-//   // @todo this should load from Ctools Export/CRUD API
-//   $sub_layouts = array(
-//     'bob' => panels_frame_stack_fake_layout('bob', $plugin),
-//     'steve' => panels_frame_stack_fake_layout('steve', $plugin),
-//     'bill' => panels_frame_stack_fake_layout('bill', $plugin),
-//   );
-//   return $sub_layouts;
-// }
+/**
+ * Get children callback.
+ */
+function panels_frame_stack_get_sublayouts($plugin, $layout_name) {
+  ctools_include('export');
+  $items = ctools_export_load_object('panels_frame', 'conditions', array('plugin' => 'stack'));
+  foreach ($items as $name => $item) {
+    $layouts['panels_frame_stack:' . $name] = panels_frame_stack_child_plugin($plugin, $item);
+  }
+
+  return $layouts;
+}
+
+/**
+ * Helper to generate the layout definition for sub-layouts.
+ */
+function panels_frame_stack_child_plugin($plugin, $object) {
+  $plugin['title'] = check_plain($object->label);
+  $plugin['category'] = empty($object->category) ? t('Miscellaneous') : check_plain($object->category);
+  $plugin['description'] = check_plain($object->description);
+  $plugin['panels_frame'] = $object;
+  unset($plugin['builder'], $plugin['get child'], $plugin['get children']);
+
+  return $plugin;
+}
 
 /**
  * Settings form builder.
  */
 function panels_frame_stack_settings(&$display, $layout, $settings) {
+  $form = array();
   foreach ($display->panels_frame as $name => $frame) {
     if (!empty($frame['plugin']['settings form']) && function_exists($frame['plugin']['settings form'])) {
       $form[$name] = array(
@@ -81,11 +72,9 @@ function panels_frame_stack_settings(&$display, $layout, $settings) {
 function panels_frame_stack_region(&$display, $settings, $base_layout) {
   $regions = array();
 
-  // @todo replace with export_ui objects
-  foreach (panels_frame_stack_fake_frames() as $name => $frame) {
-    // Avoid recursion. @todo add form validation to prevent this from occurring on the front-end.
+  foreach ($base_layout['panels_frame']->data as $name => $frame) {
     if ($display->layout == $frame['layout']) {
-      watchdog('panels_frame', '@frame cannot be embedded within itself!', array('@frame' => $frame['layout']), WATHDOG_WARNING);
+      watchdog('panels_frame', 'Uh-oh. @frame cannot be embedded within itself! !link', array('@frame' => $frame['layout'], '!link' => l(t('Fix the anomaly'), 'admin/structure/panels/frame/stacks/list/' . $frame['name'] . '/edit/frames')), WATHDOG_WARNING);
       continue;
     }
 
@@ -137,8 +126,9 @@ function theme_panels_frame_stack($vars) {
 }
 
 function panels_frame_stack_distribute_layout_content(&$vars) {
-  // Back-up original renderer prefix for the encompassing layout render
+  // Back-up original renderer prefix/suffix for the encompassing layout render
   $renderer_prefix = $vars['renderer']->prefix;
+  $renderer_suffix = $vars['renderer']->suffix;
   $renderer_layout = $vars['renderer']->plugins['layout'];
 
   foreach ($vars['display']->panels_frame as $name => $frame) {
@@ -158,11 +148,15 @@ function panels_frame_stack_distribute_layout_content(&$vars) {
     }
 
     $vars['renderer']->prefix = '';
+    $vars['renderer']->suffix = '';
     $vars['renderer']->plugins['layout'] = $frame['plugin'];
 
     $vars['renderer']->add_meta();
     $settings = isset($vars['display']->layout_settings[$name]) ? $vars['display']->layout_settings[$name] : array();
-    $vars['frames'][$name] = $vars['renderer']->prefix . theme($theme, array('content' => $content, 'settings' => $settings, 'display' => $vars['display'], 'layout' => $frame['plugin'], 'renderer' => $vars['renderer']));
+
+    $vars['frames'][$name]  = $vars['renderer']->prefix;
+    $vars['frames'][$name] .= theme($theme, array('content' => $content, 'settings' => $settings, 'display' => $vars['display'], 'layout' => $frame['plugin'], 'renderer' => $vars['renderer']));
+    $vars['frames'][$name] .= $vars['renderer']->suffix;
   }
 
   $vars['renderer']->prefix = $renderer_prefix;

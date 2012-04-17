@@ -18,6 +18,15 @@ class panels_frame_stack_ui extends panels_frame_ui {
     parent::hook_menu($items);
   }
 
+  function edit_form(&$form, &$form_state) {
+    parent::edit_form($form, $form_state);
+
+    $form['info']['plugin'] = array(
+      '#type' => 'value',
+      '#value' => 'stack',
+    );
+  }
+
   function edit_form_frames(&$form, &$form_state) {
     ctools_include('plugins', 'panels');
     ctools_include('ajax');

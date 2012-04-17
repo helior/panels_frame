@@ -34,6 +34,11 @@ function panels_frame_schema() {
         'description' => 'A place for commentary and description to this layout.',
         'object default' => '',
       ),
+      'plugin' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'description' => 'The layout plugin that owns this layout.',
+      ),
       'category' => array(
         'type' => 'varchar',
         'length' => '255',
