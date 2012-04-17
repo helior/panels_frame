@@ -18,8 +18,7 @@ class panels_frame_stack_ui extends panels_frame_ui {
     parent::hook_menu($items);
   }
 
-  function edit_form(&$form, &$form_state) {
-    parent::edit_form($form, $form_state);
+  function edit_form_frames(&$form, &$form_state) {
     ctools_include('plugins', 'panels');
     ctools_include('ajax');
     ctools_include('modal');
@@ -27,67 +26,60 @@ class panels_frame_stack_ui extends panels_frame_ui {
     ctools_add_css('panels_dnd', 'panels');
 
     $cache_mechanism = 'export_ui::' . $form_state['plugin']['name'];
+    $cache_key = $form_state['object']->edit_cache_get_key($form_state['item'], $form_state['form type']);
 
-    $form['frames'] = array('#type' => 'fieldset');
-    $form['frames']['data'] = array(
+    $form['data'] = array(
       '#element_validate' => array('panels_frame_stack_ui_frames_sort'),
       '#after_build' => array('panels_frame_stack_ui_frames_after_build'),
       '#tree' => TRUE,
     );
 
-    $fake = $this->fake_elements();
     foreach ($form_state['item']->data as $name => $frame) {
-      $layout = panels_get_layout($fake[$name]['layout']);
+      foreach (array('label', 'identifier', 'layout') as $hidden_value) {
+        $form['data'][$name][$hidden_value] = array(
+          '#type' => 'value',
+          '#value' => $frame[$hidden_value],
+        );
+      }
+
+      $layout = panels_get_layout($frame['layout']);
       // Preview
-      $form['frames']['data'][$name]['preview'] = array(
+      $form['data'][$name]['preview'] = array(
         '#markup' => panels_print_layout_icon($layout['name'], $layout),
       );
 
-      // Title
-      $form['frames']['data'][$name]['title'] = array(
-        '#markup' => $layout['title'] . '<br>(' . $name . ')',
-      );
+      // Display Title
+      $form['data'][$name]['title']['#markup'] = implode('<br />', array(
+        '<strong>' . $frame['label'] . '</strong>',
+        '<em>' . $layout['title'] . '</em>',
+      ));
 
       // Weight
-      $form['frames']['data'][$name]['weight'] = array(
+      $form['data'][$name]['weight'] = array(
         '#type' => 'weight',
         '#default_value' => $frame['weight'],
         '#attributes' => array('class' => array('panels-frame-stack-frame-weight')),
       );
 
       // Operations
-      $form['frames']['data'][$name]['operations'] = array(
+      $form['data'][$name]['operations'] = array(
         '#type' => 'link',
         '#title' => t('Configure'),
         '#href' => 'admin/structure',
       );
     }
 
-    $form['frames']['add'] = array(
+    $form['add'] = array(
       '#type' => 'submit',
       '#attributes' => array('class' => array('ctools-use-modal')),
       '#id' => 'panels-frame-stack-frame-add',
       '#value' => t('Moar!'),
     );
 
-    $form['frames']['add-url'] = array(
+    $form['add-url'] = array(
       '#attributes' => array('class' => array("panels-frame-stack-frame-add-url")),
       '#type' => 'hidden',
-      '#value' => url('panels_frame/ajax/stack/frame/add/' . $cache_mechanism . '/' . $form_state['item']->name, array('absolute' => TRUE)),
-    );
-  }
-
-  function fake_elements() {
-    return array(
-      'first' => array(
-        'layout' => 'threecol_25_50_25_stacked',
-      ),
-      'second' => array(
-        'layout' => 'twocol',
-      ),
-      'third' => array(
-        'layout' => 'twocol_bricks',
-      ),
+      '#value' => url('panels_frame/ajax/stack/frame/add/' . $cache_mechanism . '/' . $cache_key, array('absolute' => TRUE)),
     );
   }
 }

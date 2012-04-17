@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * @todo abstract table rendering of stack frames to allow ajax replacement.
  * @todo Use Ctools Export API for retrieval of children layouts.
  * @todo Build UI for creating "stacks".
  * @todo Implement hook_panels_dashboard_blocks().

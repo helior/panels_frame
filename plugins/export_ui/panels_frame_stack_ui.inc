@@ -22,9 +22,9 @@ $plugin = array(
 
   'use wizard' => TRUE,
   'form info' => array(
-    'show trail' => FALSE,
     'order' => array(
       'basic' => t('Basic information'),
+      'frames' => t('Frames'),
     ),
   ),
 );
