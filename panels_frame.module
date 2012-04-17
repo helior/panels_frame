@@ -2,8 +2,6 @@
 
 /**
  * @todo abstract table rendering of stack frames to allow ajax replacement.
- * @todo Use Ctools Export API for retrieval of children layouts.
- * @todo Build UI for creating "stacks".
  * @todo Implement hook_panels_dashboard_blocks().
  * @todo Validate the 'category' field in builder @see panels_mini_ui.class.php
  */
@@ -64,17 +62,6 @@ function panels_frame_element_info() {
  * Machine-name exists callback for frame identifiers.
  */
 function panels_frame_frame_identifier_exists($value, &$element, &$form_state) {}
-
-/**
- * Element validate callback to sort frames.
- */
-function panels_frame_stack_ui_frames_sort(&$element, &$form_state) {
-  $value = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
-  if ($value) {
-    uasort($value, 'drupal_sort_weight');
-    drupal_array_set_nested_value($form_state['values'], $element['#parents'], $value);
-  }
-}
 
 /**
  * Element process callback for "panels_frame_layout".
