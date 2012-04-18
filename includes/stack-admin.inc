@@ -2,13 +2,14 @@
 
 /**
  * Ajax menu callback to add a fram to a Panels Frame Stack.
+ * @todo Make this callback degradable to nojs :\
  */
-function panels_frame_ajax_stack_frame_add($cache_mechanism, $cache_key, $name = NULL) {
+function panels_frame_stack_frame_ajax_delegate($op, $cache_mechanism, $cache_key, $name = NULL) {
   ctools_include('ajax');
   ctools_include('cache');
   ctools_include('modal');
 
-  if (empty($cache_mechanism) || empty($cache_key)) {
+  if (empty($op) || empty($cache_mechanism) || empty($cache_key)) {
     ctools_ajax_render_error();
   }
 
@@ -18,16 +19,21 @@ function panels_frame_ajax_stack_frame_add($cache_mechanism, $cache_key, $name =
   }
 
   $form_state = array(
-    'title' => t('Add Frame'),
+    'title' => t('!op Frame @name', array('!op' => ucwords($op), '@name' => $name)),
     'ajax' => TRUE,
     'cache_mechanism' => $cache_mechanism,
     'cache_key' => $cache_key,
+    'frame' => $name,
     'object' => $object,
+    'op' => $op,
   );
-  $commands = ctools_modal_form_wrapper('panels_frame_stack_frame_add', $form_state);
+
+  $commands = ctools_modal_form_wrapper("panels_frame_stack_frame_$op", $form_state);
 
   if ($form_state['executed']) {
     $commands = array();
+    // @todo render the table-drag correctly and replace on page.
+    // @fixme Possibly have to render the entire edit form again.
     // $table = panels_frame_stack_ui_frames_table($object->data);
     // $commands[] = ajax_command_replace('table#panels-frame-stack-ui-table', render($table));
     $commands[] = ctools_modal_command_dismiss();
@@ -37,12 +43,19 @@ function panels_frame_ajax_stack_frame_add($cache_mechanism, $cache_key, $name =
   exit;
 }
 
-function panels_frame_stack_frame_add($form, &$form_state) {
+/**
+ * Helper for building the frame form.
+ */
+function panels_frame_stack_frame_form(&$form_state) {
+  $data = $form_state['object']->data;
+  $name = $form_state['frame'];
+
   $form['label'] = array(
     '#type' => 'textfield',
     '#title' => t('Label'),
     '#required' => TRUE,
     '#size' => 40,
+    '#default_value' => isset($data[$name]['label']) ? $data[$name]['label'] : '',
   );
 
   $form['identifier'] = array(
@@ -54,28 +67,103 @@ function panels_frame_stack_frame_add($form, &$form_state) {
       'source' => array('label'),
       'label' => 'identifier',
     ),
+    '#default_value' => isset($data[$name]['identifier']) ? $data[$name]['identifier'] : '',
   );
 
   $form['weight'] = array(
     '#type' => 'value',
-    '#value' => 0,
+    '#default_value' => isset($data[$name]['weight']) ? $data[$name]['weight'] : 0,
   );
 
   $form['layout'] = array(
     '#title' => 'layout',
     '#type' => 'panels_frame_layout',
     '#required' => TRUE,
-  );
-
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Add'),
+    '#default_value' => isset($data[$name]['layout']) ? $data[$name]['layout'] : '',
   );
 
   return $form;
 }
 
-function panels_frame_stack_frame_add_submit(&$form, &$form_state) {
+/**
+ * Form builder for "add"-ing a frame.
+ */
+function panels_frame_stack_frame_add($form, &$form_state) {
+  $form = panels_frame_stack_frame_form($form_state);
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add'),
+    '#submit' => array('panels_frame_stack_frame_common_submit'),
+  );
+
+  return $form;
+}
+
+/**
+ * Form builder for "edit"-ing a frame.
+ */
+function panels_frame_stack_frame_edit($form, &$form_state) {
+  $form = panels_frame_stack_frame_form($form_state);
+  $form['identifier']['#disabled'] = TRUE;
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add'),
+    '#submit' => array('panels_frame_stack_frame_common_submit'),
+  );
+
+  return $form;
+}
+
+/**
+ * Form builder for "clone"-ing a frame.
+ */
+function panels_frame_stack_frame_clone($form, &$form_state) {
+  $form = panels_frame_stack_frame_form($form_state);
+  $form['label']['#default_value'] .= ' ' . t('copy');
+  unset($form['identifier']['#default_value']);
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Clone'),
+    '#submit' => array('panels_frame_stack_frame_common_submit'),
+  );
+
+  return $form;
+}
+
+/**
+ * Form builder for "delete"-ing a frame.
+ * @todo Roll your own confirm_form which will allow a custom "cancel" link
+ * that uses ajax commands to close the modal dialog.
+ */
+function panels_frame_stack_frame_delete($form, &$form_state) {
+  $question = t('Are you sure you want to remove the frame @name?', array('@name' => $form_state['frame']));
+  $form = confirm_form($form, $question);
+  $form['description']['#markup'] = $question . ' ' . $form['description']['#markup'];
+  unset($form['actions']['cancel']);
+
+  return $form;
+}
+
+/**
+ * Submission handler for "delete"-ing a frame.
+ */
+function panels_frame_stack_frame_delete_submit(&$form, &$form_state) {
+  $cache_mechanism = $form_state['cache_mechanism'];
+  $cache_key = $form_state['cache_key'];
+  $name = $form_state['frame'];
+
+  $object = $form_state['object'];
+  unset($object->data[$name]);
+  ctools_cache_set($cache_mechanism, $cache_key, $object);
+}
+
+/**
+ * Common submision handler for add/edit/clone operations.
+ */
+function panels_frame_stack_frame_common_submit(&$form, &$form_state) {
   $cache_mechanism = $form_state['cache_mechanism'];
   $cache_key = $form_state['cache_key'];
   $object = $form_state['object'];
@@ -92,7 +180,10 @@ function panels_frame_stack_frame_add_submit(&$form, &$form_state) {
  * Form element builder for frames table.
  * @todo this only renders properly in the context of a form build, not just element render.
  */
-function panels_frame_stack_ui_frames_table($data) {
+function panels_frame_stack_ui_frames_table($data, &$form_state) {
+  $cache_mechanism = $form_state['cache_mechanism'];
+  $cache_key = $form_state['cache_key'];
+
   $element = array(
     '#element_validate' => array('panels_frame_stack_ui_frames_sort'),
     '#after_build' => array('panels_frame_stack_ui_frames_after_build'),
@@ -127,10 +218,28 @@ function panels_frame_stack_ui_frames_table($data) {
     );
 
     // Operations
+    $operations = array(
+      array(
+        'title' => t('Edit'),
+        'href' => "panels_frame/stack/frame/ajax/edit/$cache_mechanism/$cache_key/$name",
+        'attributes' => array('class' => array('use-ajax')),
+      ),
+      array(
+        'title' => t('Clone'),
+        'href' => "panels_frame/stack/frame/ajax/clone/$cache_mechanism/$cache_key/$name",
+        'attributes' => array('class' => array('use-ajax')),
+      ),
+      array(
+        'title' => t('Delete'),
+        'href' => "panels_frame/stack/frame/ajax/delete/$cache_mechanism/$cache_key/$name",
+        'attributes' => array('class' => array('use-ajax')),
+      ),
+    );
+
     $element[$name]['operations'] = array(
-      '#type' => 'link',
-      '#title' => t('Configure'),
-      '#href' => 'admin/structure',
+      '#theme' => 'links__ctools_dropbutton',
+      '#links' => $operations,
+      '#attributes' => array('class' => array('links', 'inline')),
     );
   }
 

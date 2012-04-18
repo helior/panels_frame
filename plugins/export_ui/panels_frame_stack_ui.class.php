@@ -11,8 +11,10 @@ class panels_frame_stack_ui extends panels_frame_ui {
       'theme callback' => 'ajax_base_page_theme',
     );
 
-    $items['panels_frame/ajax/stack/frame/add'] = array(
-      'page callback' => 'panels_frame_ajax_stack_frame_add',
+    // $op/$cache_mechanism/$cache_key/$name
+    $items['panels_frame/stack/frame/ajax/%/%/%'] = array(
+      'page callback' => 'panels_frame_stack_frame_ajax_delegate',
+      'page arguments' => array(4,5,6),
     ) + $base;
 
     parent::hook_menu($items);
@@ -37,8 +39,12 @@ class panels_frame_stack_ui extends panels_frame_ui {
 
     $cache_mechanism = 'export_ui::' . $form_state['plugin']['name'];
     $cache_key = $form_state['object']->edit_cache_get_key($form_state['item'], $form_state['form type']);
+    $fake_form_state = array(
+      'cache_mechanism' => $cache_mechanism,
+      'cache_key' => $cache_key,
+    );
 
-    $form['data'] = panels_frame_stack_ui_frames_table($form_state['item']->data);
+    $form['data'] = panels_frame_stack_ui_frames_table($form_state['item']->data, $fake_form_state);
 
     $form['add'] = array(
       '#type' => 'submit',
@@ -50,7 +56,7 @@ class panels_frame_stack_ui extends panels_frame_ui {
     $form['add-url'] = array(
       '#attributes' => array('class' => array("panels-frame-stack-frame-add-url")),
       '#type' => 'hidden',
-      '#value' => url('panels_frame/ajax/stack/frame/add/' . $cache_mechanism . '/' . $cache_key, array('absolute' => TRUE)),
+      '#value' => url("panels_frame/stack/frame/ajax/add/$cache_mechanism/$cache_key", array('absolute' => TRUE)),
     );
   }
 }
