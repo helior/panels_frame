@@ -50,7 +50,7 @@ class panels_frame_stack_ui extends panels_frame_ui {
       '#type' => 'submit',
       '#attributes' => array('class' => array('ctools-use-modal')),
       '#id' => 'panels-frame-stack-frame-add',
-      '#value' => t('Moar!'),
+      '#value' => t('Add frame'),
     );
 
     $form['add-url'] = array(

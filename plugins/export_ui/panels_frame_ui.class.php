@@ -43,6 +43,14 @@ class panels_frame_ui extends ctools_export_ui {
       '#title' => t('Category'),
       '#description' => t('What category this layout should appear in. If left blank the category will be "Miscellaneous".'),
     );
+  }
 
+  function edit_form_validate(&$form, &$form_state) {
+    parent::edit_form_validate($form, $form_state);
+    if (isset($form_state['values']['category'])) {
+      if (preg_match("/[^A-Za-z0-9 ]/", $form_state['values']['category'])) {
+        form_error($form['category'], t('Categories may contain only alphanumerics or spaces.'));
+      }
+    }
   }
 }

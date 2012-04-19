@@ -1,11 +1,5 @@
 <?php
 
-/**
- * @todo abstract table rendering of stack frames to allow ajax replacement.
- * @todo Implement hook_panels_dashboard_blocks().
- * @todo Validate the 'category' field in builder @see panels_mini_ui.class.php
- */
-
  /**
   * Implements hook_ctools_plugin_directory().
   */
@@ -14,6 +8,52 @@
      return "plugins/$plugin";
    }
  }
+
+
+/**
+ * Implements hook_panels_dashboard_blocks().
+ */
+function panels_frame_panels_dashboard_blocks(&$vars) {
+  $vars['links']['panels_frame'] = array(
+    'title' => l('Panels Frame', 'admin/structure/panels/frame'),
+    'description' => t('Create new layouts from combining multiple layouts together!'),
+  );
+
+  ctools_include('export');
+  $items = ctools_export_crud_load_all('panels_frame');
+  $count = 0;
+  $rows = array();
+
+  foreach ($items as $item) {
+    $rows[] = array(
+      check_plain($item->label),
+      array(
+        'data' => l(t('Edit'), "admin/structure/panels/frames/$item->plugin/list/$item->name/edit"),
+        'class' => 'links',
+      ),
+    );
+
+    // Only show 10.
+    if (++$count >= 10) {
+      break;
+    }
+  }
+
+  if ($rows) {
+    $content = theme('table', array('rows' => $rows, 'attributes' => array('class' => 'panels-manage')));
+  }
+  else {
+    $content = '<p>' . t('There are no panels frames :(') . '</p>';
+  }
+
+  $vars['blocks']['panels_frame'] = array(
+    'title' => t('Panels Frame'),
+    'link' => l(t('Go to list'), 'admin/structure/panels/frame'),
+    'content' => $content,
+    'class' => 'dashboard-panels-frame',
+    'section' => 'right',
+  );
+}
 
 /**
  * Implements hook_menu().

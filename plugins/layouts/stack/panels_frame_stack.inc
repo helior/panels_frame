@@ -28,6 +28,7 @@ function panels_frame_stack_get_sublayout($plugin, $layout_name, $sublayout_name
 function panels_frame_stack_get_sublayouts($plugin, $layout_name) {
   ctools_include('export');
   $items = ctools_export_load_object('panels_frame', 'conditions', array('plugin' => 'stack'));
+  $layouts = array();
   foreach ($items as $name => $item) {
     $layouts['panels_frame_stack:' . $name] = panels_frame_stack_child_plugin($plugin, $item);
   }
@@ -71,7 +72,6 @@ function panels_frame_stack_settings(&$display, $layout, $settings) {
  */
 function panels_frame_stack_region(&$display, $settings, $base_layout) {
   $regions = array();
-
   foreach ($base_layout['panels_frame']->data as $name => $frame) {
     if ($display->layout == $frame['layout']) {
       watchdog('panels_frame', 'Uh-oh. @frame cannot be embedded within itself! !link', array('@frame' => $frame['layout'], '!link' => l(t('Fix the anomaly'), 'admin/structure/panels/frame/stacks/list/' . $frame['name'] . '/edit/frames')), WATHDOG_WARNING);
@@ -122,7 +122,6 @@ function theme_panels_frame_stack($vars) {
   }
 
   return '<div' . $vars['attributes'] . '>' . $output . '</div>';
-  // return "<div{$vars['attributes']}>$output</div>";
 }
 
 function panels_frame_stack_distribute_layout_content(&$vars) {

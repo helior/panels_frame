@@ -20,11 +20,11 @@ function panels_frame_stack_frame_ajax_delegate($op, $cache_mechanism, $cache_ke
 
   $form_state = array(
     'title' => t('!op Frame @name', array('!op' => ucwords($op), '@name' => $name)),
-    'ajax' => TRUE,
     'cache_mechanism' => $cache_mechanism,
     'cache_key' => $cache_key,
-    'frame' => $name,
     'object' => $object,
+    'frame' => $name,
+    'ajax' => TRUE,
     'op' => $op,
   );
 
@@ -32,11 +32,10 @@ function panels_frame_stack_frame_ajax_delegate($op, $cache_mechanism, $cache_ke
 
   if ($form_state['executed']) {
     $commands = array();
-    // @todo render the table-drag correctly and replace on page.
-    // @fixme Possibly have to render the entire edit form again.
-    // $table = panels_frame_stack_ui_frames_table($object->data);
-    // $commands[] = ajax_command_replace('table#panels-frame-stack-ui-table', render($table));
-    $commands[] = ctools_modal_command_dismiss();
+    // @todo render the table-drag correctly and replace on page. Only then can
+    // you simply dismiss the modal dialog box. Otherwise, just refresh the page.
+    // $commands[] = ctools_modal_command_dismiss();
+    $commands[] = ctools_ajax_command_reload();
   }
 
   print ajax_render($commands);
@@ -135,8 +134,7 @@ function panels_frame_stack_frame_clone($form, &$form_state) {
 
 /**
  * Form builder for "delete"-ing a frame.
- * @todo Roll your own confirm_form which will allow a custom "cancel" link
- * that uses ajax commands to close the modal dialog.
+ * @fixme this is not nojs-friendly.
  */
 function panels_frame_stack_frame_delete($form, &$form_state) {
   $question = t('Are you sure you want to remove the frame @name?', array('@name' => $form_state['frame']));
