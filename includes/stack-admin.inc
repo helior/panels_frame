@@ -93,6 +93,7 @@ function panels_frame_stack_frame_add($form, &$form_state) {
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Add'),
+    '#validate' => array('panels_frame_stack_frame_layout_validate'),
     '#submit' => array('panels_frame_stack_frame_common_submit'),
   );
 
@@ -108,7 +109,8 @@ function panels_frame_stack_frame_edit($form, &$form_state) {
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Add'),
+    '#value' => t('Update'),
+    '#validate' => array('panels_frame_stack_frame_layout_validate'),
     '#submit' => array('panels_frame_stack_frame_common_submit'),
   );
 
@@ -126,6 +128,7 @@ function panels_frame_stack_frame_clone($form, &$form_state) {
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Clone'),
+    '#validate' => array('panels_frame_stack_frame_layout_validate'),
     '#submit' => array('panels_frame_stack_frame_common_submit'),
   );
 
@@ -159,7 +162,20 @@ function panels_frame_stack_frame_delete_submit(&$form, &$form_state) {
 }
 
 /**
- * Common submision handler for add/edit/clone operations.
+ * Validation handler to prevent nested layouts.
+ * @fixme Need a proper helper that builds layout name.
+ */
+function panels_frame_stack_frame_layout_validate(&$form, &$form_state) {
+  $name = $form_state['object']->name;
+  $frame = $form_state['values']['identifier'];
+  $layout = $form_state['values']['layout'];
+  if ($layout == 'panels_frame_stack:' . $name) {
+    form_set_error('layout', t('You cannot use %layout as a child layout as this will cause an infinite loop!', array('%layout' => $name)));
+  }
+}
+
+/**
+ * Common submission handler for add/edit/clone operations.
  */
 function panels_frame_stack_frame_common_submit(&$form, &$form_state) {
   $cache_mechanism = $form_state['cache_mechanism'];
