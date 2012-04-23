@@ -39,12 +39,69 @@ class panels_frame_stack_ui extends panels_frame_ui {
 
     $cache_mechanism = 'export_ui::' . $form_state['plugin']['name'];
     $cache_key = $form_state['object']->edit_cache_get_key($form_state['item'], $form_state['form type']);
-    $fake_form_state = array(
-      'cache_mechanism' => $cache_mechanism,
-      'cache_key' => $cache_key,
+
+    // Call out the values that will have no UI here. It will be referenced in
+    // multiple places.
+    $form_state['no_ui'] = array('label', 'identifier', 'layout');
+
+    $form['data'] = array(
+      '#element_validate' => array('panels_frame_stack_ui_frames_sort'),
+      '#after_build' => array('panels_frame_stack_ui_frames_after_build'),
+      '#tree' => TRUE,
     );
 
-    $form['data'] = panels_frame_stack_ui_frames_table($form_state['item']->data, $fake_form_state);
+    foreach ($form_state['item']->data as $name => $frame) {
+      foreach ($form_state['no_ui'] as $hidden) {
+        $form['data'][$name][$hidden] = array(
+          '#type' => 'value',
+          '#value' => $frame[$hidden],
+        );
+      }
+
+      // Preview
+      $layout = panels_get_layout($frame['layout']);
+      $form['data'][$name]['preview'] = array(
+        '#markup' => panels_print_layout_icon($layout['name'], $layout),
+      );
+
+      // Display Title
+      $form['data'][$name]['title']['#markup'] = implode('<br />', array(
+        '<strong>' . $frame['label'] . '</strong>',
+        '<em>' . $layout['title'] . '</em>',
+      ));
+
+      // Weight
+      $form['data'][$name]['weight'] = array(
+        '#type' => 'weight',
+        '#default_value' => $frame['weight'],
+        '#attributes' => array('class' => array('panels-frame-stack-frame-weight')),
+      );
+
+      // Operations
+      $operations = array(
+        array(
+          'title' => t('Edit'),
+          'href' => "panels_frame/stack/frame/ajax/edit/$cache_mechanism/$cache_key/$name",
+          'attributes' => array('class' => array('use-ajax')),
+        ),
+        array(
+          'title' => t('Clone'),
+          'href' => "panels_frame/stack/frame/ajax/clone/$cache_mechanism/$cache_key/$name",
+          'attributes' => array('class' => array('use-ajax')),
+        ),
+        array(
+          'title' => t('Delete'),
+          'href' => "panels_frame/stack/frame/ajax/delete/$cache_mechanism/$cache_key/$name",
+          'attributes' => array('class' => array('use-ajax')),
+        ),
+      );
+
+      $form['data'][$name]['operations'] = array(
+        '#theme' => 'links__ctools_dropbutton',
+        '#links' => $operations,
+        '#attributes' => array('class' => array('links', 'inline')),
+      );
+    }
 
     $form['add'] = array(
       '#type' => 'submit',

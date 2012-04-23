@@ -2,13 +2,13 @@
 
 /**
  * Ajax menu callback to add a fram to a Panels Frame Stack.
- * @todo Make this callback degradable to nojs :\
  */
 function panels_frame_stack_frame_ajax_delegate($op, $cache_mechanism, $cache_key, $name = NULL) {
   ctools_include('ajax');
   ctools_include('cache');
   ctools_include('modal');
 
+  // Fail early if we don't have the data we need.
   if (empty($op) || empty($cache_mechanism) || empty($cache_key)) {
     ctools_ajax_render_error();
   }
@@ -137,11 +137,11 @@ function panels_frame_stack_frame_clone($form, &$form_state) {
 
 /**
  * Form builder for "delete"-ing a frame.
- * @fixme this is not nojs-friendly.
+ * @todo create a small, custom JS theme for ctools modal.
  */
 function panels_frame_stack_frame_delete($form, &$form_state) {
   $question = t('Are you sure you want to remove the frame @name?', array('@name' => $form_state['frame']));
-  $form = confirm_form($form, $question);
+  $form = confirm_form($form, $question, '');
   $form['description']['#markup'] = $question . ' ' . $form['description']['#markup'];
   unset($form['actions']['cancel']);
 
@@ -163,7 +163,7 @@ function panels_frame_stack_frame_delete_submit(&$form, &$form_state) {
 
 /**
  * Validation handler to prevent nested layouts.
- * @fixme Need a proper helper that builds layout name.
+ * @fixme Need a proper helper that builds layout name (ex: panels_frame:stack:name).
  */
 function panels_frame_stack_frame_layout_validate(&$form, &$form_state) {
   $name = $form_state['object']->name;
@@ -191,76 +191,6 @@ function panels_frame_stack_frame_common_submit(&$form, &$form_state) {
 }
 
 /**
- * Form element builder for frames table.
- * @todo this only renders properly in the context of a form build, not just element render.
- */
-function panels_frame_stack_ui_frames_table($data, &$form_state) {
-  $cache_mechanism = $form_state['cache_mechanism'];
-  $cache_key = $form_state['cache_key'];
-
-  $element = array(
-    '#element_validate' => array('panels_frame_stack_ui_frames_sort'),
-    '#after_build' => array('panels_frame_stack_ui_frames_after_build'),
-    '#tree' => TRUE,
-  );
-
-  foreach ($data as $name => $frame) {
-    foreach (array('label', 'identifier', 'layout') as $hidden_value) {
-      $element[$name][$hidden_value] = array(
-        '#type' => 'value',
-        '#value' => $frame[$hidden_value],
-      );
-    }
-
-    // Preview
-    $layout = panels_get_layout($frame['layout']);
-    $element[$name]['preview'] = array(
-      '#markup' => panels_print_layout_icon($layout['name'], $layout),
-    );
-
-    // Display Title
-    $element[$name]['title']['#markup'] = implode('<br />', array(
-      '<strong>' . $frame['label'] . '</strong>',
-      '<em>' . $layout['title'] . '</em>',
-    ));
-
-    // Weight
-    $element[$name]['weight'] = array(
-      '#type' => 'weight',
-      '#default_value' => $frame['weight'],
-      '#attributes' => array('class' => array('panels-frame-stack-frame-weight')),
-    );
-
-    // Operations
-    $operations = array(
-      array(
-        'title' => t('Edit'),
-        'href' => "panels_frame/stack/frame/ajax/edit/$cache_mechanism/$cache_key/$name",
-        'attributes' => array('class' => array('use-ajax')),
-      ),
-      array(
-        'title' => t('Clone'),
-        'href' => "panels_frame/stack/frame/ajax/clone/$cache_mechanism/$cache_key/$name",
-        'attributes' => array('class' => array('use-ajax')),
-      ),
-      array(
-        'title' => t('Delete'),
-        'href' => "panels_frame/stack/frame/ajax/delete/$cache_mechanism/$cache_key/$name",
-        'attributes' => array('class' => array('use-ajax')),
-      ),
-    );
-
-    $element[$name]['operations'] = array(
-      '#theme' => 'links__ctools_dropbutton',
-      '#links' => $operations,
-      '#attributes' => array('class' => array('links', 'inline')),
-    );
-  }
-
-  return $element;
-}
-
-/**
  * Element validate callback to sort frames.
  */
 function panels_frame_stack_ui_frames_sort(&$element, &$form_state) {
@@ -274,33 +204,40 @@ function panels_frame_stack_ui_frames_sort(&$element, &$form_state) {
 /**
  * After build callback for frame data table.
  */
-function panels_frame_stack_ui_frames_after_build(&$element) {
+function panels_frame_stack_ui_frames_after_build(&$element, &$form_state) {
   $id = 'panels-frame-stack-ui-table';
+  ctools_add_css('panels-frame.stack-admin', 'panels_frame');
   drupal_add_tabledrag($id, 'order', 'sibling', 'panels-frame-stack-frame-weight');
 
+  // Explicitly naming our headers for form elements which DO have a UI.
   $table['header'] = array(
-    array('data' => t('Preview'), 'class' => 'previeww'),
-    array('data' => t('Title'), 'class' => 'titlee'),
-    array('data' => t('Weight'), 'class' => 'weightt'),
-    array('data' => t('Operations'), 'class' => 'operationss'),
+    array('data' => t('Preview'), 'class' => 'preview'),
+    array('data' => t('Title'), 'class' => 'title'),
+    array('data' => t('Weight'), 'class' => 'weight'),
+    array('data' => t('Operations'), 'class' => 'operations'),
   );
 
   $table['rows'] = array();
-  foreach (element_children($element) as $child) {
+  // Loop through each frame.
+  foreach (element_children($element) as $frame) {
+    $rows = array();
+    // Loop through each property.
+    foreach (element_children($element[$frame]) as $property) {
+      // Filter out the properties that have no UI.
+      if (!in_array($property, $form_state['no_ui'])) {
+        $rows[] = array('data' => render($element[$frame][$property]), 'class' => $property);
+      }
+    }
     $table['rows'][] = array(
       'class' => array('draggable'),
-      'data' => array(
-        render($element[$child]['preview']),
-        render($element[$child]['title']),
-        render($element[$child]['weight']),
-        render($element[$child]['operations'])
-      ),
+      'data' => $rows,
     );
   }
 
   $table['attributes']['id'] = $id;
+  $table['attributes']['class'][] = $id;
   $table['sticky'] = TRUE;
-  $table['empty'] = t('Why you no have layout?');
+  $table['empty'] = t('No frames to display.');
 
   $element['#children'] = theme('table', $table);
 
