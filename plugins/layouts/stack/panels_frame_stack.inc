@@ -3,7 +3,7 @@
 $plugin = array(
   'title' => t('Panels Frame Stack'),
   'category' => t('Builders'),
-  'icon' => 'envelope.png',
+  'icon' => 'stack.png',
   'get child' => 'panels_frame_stack_get_sublayout',
   'get children' => 'panels_frame_stack_get_sublayouts',
   'regions function' => 'panels_frame_stack_region',

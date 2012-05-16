@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @fixme Oh crap, do we have a memory spike in rendering complex layouts?
+ */
+
  /**
   * Implements hook_ctools_plugin_directory().
   */
