@@ -18,6 +18,8 @@ abstract class panels_frame_ui extends ctools_export_ui {
       '#default_value' => 'all',
       '#weight' => -10,
     );
+
+    $form['top row']['search']['#size'] = 20;
   }
 
   function list_table_header() {
@@ -54,6 +56,20 @@ abstract class panels_frame_ui extends ctools_export_ui {
     $category = $item->category ? check_plain($item->category) : t('Miscellaneous');
     $column = array(array('data' => $category, 'class' => array('ctools-export-ui-category')));
     array_splice($this->rows[$item->name]['data'], 2, 0, $column);
+  }
+
+  function list_render(&$form_state) {
+    ctools_add_css('panels-frame.ui', 'panels_frame');
+    $table = array(
+      'header' => $this->list_table_header(),
+      'rows' => $this->rows,
+      'empty' => $this->plugin['strings']['message']['no items'],
+      'attributes' => array(
+        'id' => 'ctools-export-ui-list-items',
+        'class' => array('panels-frame-ui'),
+      ),
+    );
+    return theme('table', $table);
   }
 
   function list_sort_options() {

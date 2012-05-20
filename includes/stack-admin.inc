@@ -206,7 +206,8 @@ function panels_frame_stack_ui_frames_sort(&$element, &$form_state) {
  */
 function panels_frame_stack_ui_frames_after_build(&$element, &$form_state) {
   $id = 'panels-frame-stack-ui-table';
-  ctools_add_css('panels-frame.stack-admin', 'panels_frame');
+  ctools_add_css('panels-frame.ui', 'panels_frame');
+  ctools_add_css('panels-frame.ui-stack', 'panels_frame');
   drupal_add_tabledrag($id, 'order', 'sibling', 'panels-frame-stack-frame-weight');
 
   // Explicitly naming our headers for form elements which DO have a UI.
@@ -235,6 +236,7 @@ function panels_frame_stack_ui_frames_after_build(&$element, &$form_state) {
   }
 
   $table['attributes']['id'] = $id;
+  $table['attributes']['class'][] = 'panels-frame-ui';
   $table['attributes']['class'][] = $id;
   $table['sticky'] = TRUE;
   $table['empty'] = t('No frames to display.');
