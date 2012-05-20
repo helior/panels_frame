@@ -1,10 +1,11 @@
 <?php
 
-class panels_frame_ui extends ctools_export_ui {
+abstract class panels_frame_ui extends ctools_export_ui {
 
   function list_form(&$form, &$form_state) {
     parent::list_form($form, $form_state);
 
+    // Add a filter element for Category.
     $options = array('all' => t('- All -'));
     foreach ($this->items as $item) {
       $options[$item->category] = $item->category;
@@ -19,7 +20,57 @@ class panels_frame_ui extends ctools_export_ui {
     );
   }
 
+  function list_table_header() {
+    $headers = parent::list_table_header();
+
+    // Replace the "Title" header with "Label".
+    foreach ($headers as $key => $value) {
+      if ($value['data'] == t('Title')) {
+        $headers[$key]['data'] = t('Label');
+        break;
+      }
+    }
+
+    // Insert the Category header after the first two headers.
+    $column = array(array('data' => t('Category'), 'class' => array('ctools-export-ui-category')));
+    array_splice($headers, 2, 0, $column);
+    return $headers;
+  }
+
+  function list_build_row($item, &$form_state, $operations) {
+    parent::list_build_row($item, $form_state, $operations);
+
+    // Set up additional sorting for Label and Category.
+    switch ($form_state['values']['order']) {
+      case 'label':
+        $this->sorts[$item->name] = $item->label;
+        break;
+      case 'category':
+        $this->sorts[$item->name] = ($item->category ? $item->category : t('Miscellaneous')) . $item->label;
+        break;
+    }
+
+    // Add an additional Category column after the first two columns.
+    $category = $item->category ? check_plain($item->category) : t('Miscellaneous');
+    $column = array(array('data' => $category, 'class' => array('ctools-export-ui-category')));
+    array_splice($this->rows[$item->name]['data'], 2, 0, $column);
+  }
+
+  function list_sort_options() {
+    $options = parent::list_sort_options();
+
+    // Replace option labels with our own.
+    $options['disabled'] = t('Enabled, Label');
+    $options['label'] = t('Label');
+
+    // Add an additional Category option. It's out of order, but whatev.
+    $options['category'] = t('Category');
+
+    return $options;
+  }
+
   function list_filter($form_state, $item) {
+    // Additional filter logic for Category.
     if ($form_state['values']['category'] != 'all' && $form_state['values']['category'] != $item->category) {
       return TRUE;
     }
@@ -29,6 +80,7 @@ class panels_frame_ui extends ctools_export_ui {
   function edit_form(&$form, &$form_state) {
     parent::edit_form($form, $form_state);
 
+    // Customize edit form for our preferences.
     $form['info']['label']['#title'] = t('Label');
     $form['info']['label']['#size'] = 30;
     $form['info']['name']['#size'] = 30;
@@ -36,6 +88,7 @@ class panels_frame_ui extends ctools_export_ui {
     $form['info']['description']['#rows'] = 2;
     $form['info']['description']['#resizable'] = FALSE;
 
+    // Add the Category form element.
     $form['info']['category'] = array(
       '#type' => 'textfield',
       '#size' => 24,
@@ -47,6 +100,8 @@ class panels_frame_ui extends ctools_export_ui {
 
   function edit_form_validate(&$form, &$form_state) {
     parent::edit_form_validate($form, $form_state);
+
+    // Validate Categories to make sure they don't contain illegal characters.
     if (isset($form_state['values']['category'])) {
       if (preg_match("/[^A-Za-z0-9 ]/", $form_state['values']['category'])) {
         form_error($form['category'], t('Categories may contain only alphanumerics or spaces.'));
