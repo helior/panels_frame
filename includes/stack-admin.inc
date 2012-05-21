@@ -212,7 +212,7 @@ function panels_frame_stack_ui_frames_after_build(&$element, &$form_state) {
 
   // Explicitly naming our headers for form elements which DO have a UI.
   $table['header'] = array(
-    array('data' => t('Preview'), 'class' => 'preview'),
+    array('data' => t('Icon'), 'class' => 'icon'),
     array('data' => t('Title'), 'class' => 'title'),
     array('data' => t('Weight'), 'class' => 'weight'),
     array('data' => t('Operations'), 'class' => 'operations'),

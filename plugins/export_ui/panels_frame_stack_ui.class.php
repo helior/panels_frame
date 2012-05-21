@@ -58,9 +58,9 @@ class panels_frame_stack_ui extends panels_frame_ui {
         );
       }
 
-      // Preview
+      // Icon
       $layout = panels_get_layout($frame['layout']);
-      $form['data'][$name]['preview'] = array(
+      $form['data'][$name]['icon'] = array(
         '#markup' => panels_print_layout_icon($layout['name'], $layout),
       );
 

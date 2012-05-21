@@ -2,6 +2,25 @@
 
 abstract class panels_frame_ui extends ctools_export_ui {
 
+  function hook_menu(&$items) {
+    parent::hook_menu($items);
+
+    // For added convienience, allow additional operation links to be available
+    // as local tasks.
+    $prefix = $this->plugin['menu']['menu prefix'] . '/' . $this->plugin['menu']['menu item'] . '/list/%ctools_export_ui/';
+    $prefix_length = strlen($prefix);
+    $ops = array('delete', 'revert', 'clone');
+
+    foreach ($items as $path => &$item) {
+      if (substr($path, 0, $prefix_length) === $prefix) {
+        $str[$path] = $item;
+        if (in_array(substr($path, $prefix_length), $ops)) {
+          $item['type'] = MENU_LOCAL_TASK;
+        }
+      }
+    }
+  }
+
   function list_form(&$form, &$form_state) {
     parent::list_form($form, $form_state);
 

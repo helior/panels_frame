@@ -75,3 +75,12 @@ function panels_frame_schema() {
   return $schema;
 }
 
+/**
+ * Flushes all caches.
+ */
+function panels_frame_update_7001() {
+  // Do nothing. All we want to do is flush the cache.
+  return t('Flushed caches to cleanse the soul.');
+}
+
+
