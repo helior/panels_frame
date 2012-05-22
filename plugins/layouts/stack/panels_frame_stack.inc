@@ -17,8 +17,8 @@ $plugin = array(
  */
 function panels_frame_stack_get_sublayout($plugin, $layout_name, $sublayout_name) {
   ctools_include('export');
-  if ($item = ctools_export_crud_load('panels_frame', $sublayout_name)) {
-    return panels_frame_stack_child_plugin($plugin, $item);
+  if ($object = ctools_export_crud_load('panels_frame', $sublayout_name)) {
+    return panels_frame_stack_child_plugin($plugin, $object);
   }
 }
 
@@ -27,10 +27,10 @@ function panels_frame_stack_get_sublayout($plugin, $layout_name, $sublayout_name
  */
 function panels_frame_stack_get_sublayouts($plugin, $layout_name) {
   ctools_include('export');
-  $items = ctools_export_load_object('panels_frame', 'conditions', array('plugin' => 'stack'));
+  $objects = ctools_export_load_object('panels_frame', 'conditions', array('plugin' => 'stack'));
   $layouts = array();
-  foreach ($items as $name => $item) {
-    $layouts['panels_frame_stack:' . $name] = panels_frame_stack_child_plugin($plugin, $item);
+  foreach ($objects as $name => $object) {
+    $layouts['panels_frame_stack:' . $name] = panels_frame_stack_child_plugin($plugin, $object);
   }
 
   return $layouts;
@@ -44,17 +44,56 @@ function panels_frame_stack_child_plugin($plugin, $object) {
   $plugin['category'] = empty($object->category) ? t('Miscellaneous') : check_plain($object->category);
   $plugin['description'] = check_plain($object->description);
   $plugin['panels_frame'] = $object;
-  unset($plugin['builder'], $plugin['get child'], $plugin['get children']);
+  unset($plugin['get child'], $plugin['get children']);
 
   return $plugin;
 }
 
 /**
+ * Regions callback.
+ *
+ * Collect the regions from the compiled layouts. Although other callbacks are
+ * responsible for retrieving the frame object, this is the entry point to
+ * where everything comes together.
+ */
+function panels_frame_stack_region(&$display, $settings, $base_layout) {
+  $regions = array();
+  foreach ($base_layout['panels_frame']->data as $name => $frame) {
+    // The UI protects against recursion, but we check again just in case.
+    if ($display->layout == $frame['layout']) {
+      watchdog('panels_frame', 'Uh-oh. @frame cannot be embedded within itself! !link', array('@frame' => $frame['layout'], '!link' => l(t('Fix the anomaly'), 'admin/structure/panels/frame/stacks/list/' . $frame['name'] . '/edit/frames')), WATHDOG_WARNING);
+      continue;
+    }
+
+    // Maintain a reference to the layout plugin that the frame uses.
+    $frame['plugin'] = panels_get_layout($frame['layout']);
+
+    // Essentially, we are creating regions inside of our new layout based on
+    // the layout that each frame references. We namespace each region using
+    // the identifier of their frame to make sure we don't have any collisions.
+    // Later in the render process, we extract the contents and settings of
+    // each frame and pipe them into the original display renderer of each
+    // layout.
+    foreach (panels_get_regions($frame['plugin'], $display) as $region => $label) {
+      $frame['regions'][$region]['region'] = $frame['plugin']['regions'][$region] = $label;
+      $regions[$name . '__' . $region] = $label;
+    }
+
+    $display->panels_frames[$name] = $frame;
+  }
+
+  return $regions;
+}
+
+/**
  * Settings form builder.
+ *
+ * Renders all settings forms of each frames' layout at the top of the page.
+ * @todo move this into a modal ajax form for a cleaner UI.
  */
 function panels_frame_stack_settings(&$display, $layout, $settings) {
   $form = array();
-  foreach ($display->panels_frame as $name => $frame) {
+  foreach ($display->panels_frames as $name => $frame) {
     if (!empty($frame['plugin']['settings form']) && function_exists($frame['plugin']['settings form'])) {
       $form[$name] = array(
         '#type' => 'fieldset',
@@ -64,31 +103,6 @@ function panels_frame_stack_settings(&$display, $layout, $settings) {
   }
 
   return $form;
-}
-
-/**
- * Regions callback.
- * Collect the regions from the compiled layouts.
- */
-function panels_frame_stack_region(&$display, $settings, $base_layout) {
-  $regions = array();
-  foreach ($base_layout['panels_frame']->data as $name => $frame) {
-    if ($display->layout == $frame['layout']) {
-      watchdog('panels_frame', 'Uh-oh. @frame cannot be embedded within itself! !link', array('@frame' => $frame['layout'], '!link' => l(t('Fix the anomaly'), 'admin/structure/panels/frame/stacks/list/' . $frame['name'] . '/edit/frames')), WATHDOG_WARNING);
-      continue;
-    }
-
-    $frame['plugin'] = panels_get_layout($frame['layout']);
-
-    foreach (panels_get_regions($frame['plugin'], $display) as $region => $label) {
-      $frame['regions'][$region]['region'] = $frame['plugin']['regions'][$region] = $label;
-      $regions[$name . '__' . $region] = $label;
-    }
-
-    $display->panels_frame[$name] = $frame;
-  }
-
-  return $regions;
 }
 
 /**
@@ -106,7 +120,6 @@ function template_preprocess_panels_frame_stack(&$vars) {
  * Implements template_process_HOOK().
  * @see theme_panels_frame_stack().
  */
-
 function template_process_panels_frame_stack(&$vars) {
   $vars['attributes'] = drupal_attributes($vars['attributes_array']);
 }
@@ -125,12 +138,12 @@ function theme_panels_frame_stack($vars) {
 }
 
 function panels_frame_stack_distribute_layout_content(&$vars) {
-  // Back-up original renderer prefix/suffix for the encompassing layout render
+  // Back-up original renderer prefix/suffix for the encompassing layout render.
   $renderer_prefix = $vars['renderer']->prefix;
   $renderer_suffix = $vars['renderer']->suffix;
   $renderer_layout = $vars['renderer']->plugins['layout'];
 
-  foreach ($vars['display']->panels_frame as $name => $frame) {
+  foreach ($vars['display']->panels_frames as $name => $frame) {
     // Distribute content
     $content = array();
     foreach (array_keys($frame['regions']) as $region) {
@@ -158,6 +171,9 @@ function panels_frame_stack_distribute_layout_content(&$vars) {
     $vars['frames'][$name] .= $vars['renderer']->suffix;
   }
 
+  // Rendering of individual frames are done, so let's put the original values
+  // back where alter hooks would expect them to be.
   $vars['renderer']->prefix = $renderer_prefix;
+  $vars['renderer']->suffix = $renderer_suffix;
   $vars['renderer']->plugins['layout'] = $renderer_layout;
 }
