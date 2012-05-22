@@ -109,16 +109,16 @@ function panels_frame_theme($existing, $type, $theme, $path) {
   $theme = array();
 
   // Register style themes for frames on behalf of the plugin.
-  ctools_include('plugins', 'panels');
-  foreach (panels_get_styles() as $name => $data) {
-    if (!empty($data['render frame'])) {
-      $theme[$data['render frame']] = array(
-        'variables' => array('content' => NULL, 'frame' => NULL, 'display' => NULL, 'style' => NULL, 'settings' => NULL),
-        'path' => $data['path'],
-        'file' => $data['file'],
-      );
-    }
-  }
+  // ctools_include('plugins', 'panels');
+  // foreach (panels_get_styles() as $name => $data) {
+  //   if (!empty($data['render frame'])) {
+  //     $theme[$data['render frame']] = array(
+  //       'variables' => array('content' => NULL, 'frame' => NULL, 'display' => NULL, 'style' => NULL, 'settings' => NULL),
+  //       'path' => $data['path'],
+  //       'file' => $data['file'],
+  //     );
+  //   }
+  // }
 
   return $theme;
 }

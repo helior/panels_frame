@@ -139,9 +139,10 @@ function theme_panels_frame_stack($vars) {
 
 function panels_frame_stack_distribute_layout_content(&$vars) {
   // Back-up original renderer prefix/suffix for the encompassing layout render.
-  $renderer_prefix = $vars['renderer']->prefix;
-  $renderer_suffix = $vars['renderer']->suffix;
-  $renderer_layout = $vars['renderer']->plugins['layout'];
+  $renderer = &$vars['renderer'];
+  $renderer_prefix = $renderer->prefix;
+  $renderer_suffix = $renderer->suffix;
+  $renderer_layout = $renderer->plugins['layout'];
 
   foreach ($vars['display']->panels_frames as $name => $frame) {
     // Distribute content
@@ -152,28 +153,28 @@ function panels_frame_stack_distribute_layout_content(&$vars) {
     }
 
     // Choose theme
-    if ($vars['renderer']->admin && !empty($frame['plugin']['admin theme'])) {
+    if ($renderer->admin && !empty($frame['plugin']['admin theme'])) {
       $theme = $frame['plugin']['admin theme'];
     }
     else {
       $theme = $frame['plugin']['theme'];
     }
 
-    $vars['renderer']->prefix = '';
-    $vars['renderer']->suffix = '';
-    $vars['renderer']->plugins['layout'] = $frame['plugin'];
+    $renderer->prefix = '';
+    $renderer->suffix = '';
+    $renderer->plugins['layout'] = $frame['plugin'];
 
-    $vars['renderer']->add_meta();
+    $renderer->add_meta();
     $settings = isset($vars['display']->layout_settings[$name]) ? $vars['display']->layout_settings[$name] : array();
 
-    $vars['frames'][$name]  = $vars['renderer']->prefix;
-    $vars['frames'][$name] .= theme($theme, array('content' => $content, 'settings' => $settings, 'display' => $vars['display'], 'layout' => $frame['plugin'], 'renderer' => $vars['renderer']));
-    $vars['frames'][$name] .= $vars['renderer']->suffix;
+    $rendered = theme($theme, array('content' => $content, 'settings' => $settings, 'display' => $vars['display'], 'layout' => $frame['plugin'], 'renderer' => $renderer));
+
+    $vars['frames'][$name]  = $renderer->prefix . $rendered_content . $renderer->suffix;
   }
 
   // Rendering of individual frames are done, so let's put the original values
   // back where alter hooks would expect them to be.
-  $vars['renderer']->prefix = $renderer_prefix;
-  $vars['renderer']->suffix = $renderer_suffix;
-  $vars['renderer']->plugins['layout'] = $renderer_layout;
+  $renderer->prefix = $renderer_prefix;
+  $renderer->suffix = $renderer_suffix;
+  $renderer->plugins['layout'] = $renderer_layout;
 }
