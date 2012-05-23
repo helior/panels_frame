@@ -218,3 +218,16 @@ function panels_frame_element_layout_process($element, &$form_state, $form) {
 
   return $element;
 }
+
+// function panels_frame_admin_wrapper_links($renderer) {
+//   $links = array();
+//
+//   $wrapper_links = $renderer->get_style_links('wrapper');
+//   $links[] = array(
+//     'title' => '<span class="dropdown-header">' . t('Wrapper Style') . '</span>' . theme_links(array('links' => $wrapper_links, 'attributes' => array(), 'heading' => NULL)),
+//     'html' => TRUE,
+//     'attributes' => array('class' => array('panels-sub-menu')),
+//   );
+//
+//   return theme('ctools_dropdown', array('title' => t('Wrapper Style'), 'links' => $links, 'class' => 'panels-display-links'));
+// }

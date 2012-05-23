@@ -75,7 +75,7 @@ function panels_frame_stack_region(&$display, $settings, $base_layout) {
     // each frame and pipe them into the original display renderer of each
     // layout.
     foreach (panels_get_regions($frame['plugin'], $display) as $region => $label) {
-      $frame['regions'][$region]['region'] = $frame['plugin']['regions'][$region] = $label;
+      $frame['plugin']['regions'][$region] = $label;
       $regions[$name . '__' . $region] = $label;
     }
 
@@ -137,27 +137,23 @@ function theme_panels_frame_stack($vars) {
   return '<div' . $vars['attributes'] . '>' . $output . '</div>';
 }
 
+/**
+ * Awwww shiiit!
+ */
 function panels_frame_stack_distribute_layout_content(&$vars) {
-  // Back-up original renderer prefix/suffix for the encompassing layout render.
+  // Back-up original renderer prefix/suffix for the encompassing layout.
   $renderer = &$vars['renderer'];
-  $renderer_prefix = $renderer->prefix;
-  $renderer_suffix = $renderer->suffix;
-  $renderer_layout = $renderer->plugins['layout'];
+  $original_prefix = $renderer->prefix;
+  $original_suffix = $renderer->suffix;
+  $original_layout = $renderer->plugins['layout'];
 
   foreach ($vars['display']->panels_frames as $name => $frame) {
     // Distribute content
     $content = array();
-    foreach (array_keys($frame['regions']) as $region) {
+    // foreach (array_keys($frame['regions']) as $region) {
+    foreach (array_keys($frame['plugin']['regions']) as $region) {
       $key = $name . '__' . $region;
       $content[$region] = $vars['content'][$key];
-    }
-
-    // Choose theme
-    if ($renderer->admin && !empty($frame['plugin']['admin theme'])) {
-      $theme = $frame['plugin']['admin theme'];
-    }
-    else {
-      $theme = $frame['plugin']['theme'];
     }
 
     $renderer->prefix = '';
@@ -167,14 +163,51 @@ function panels_frame_stack_distribute_layout_content(&$vars) {
     $renderer->add_meta();
     $settings = isset($vars['display']->layout_settings[$name]) ? $vars['display']->layout_settings[$name] : array();
 
-    $rendered = theme($theme, array('content' => $content, 'settings' => $settings, 'display' => $vars['display'], 'layout' => $frame['plugin'], 'renderer' => $renderer));
+    if ($renderer->admin) {
+      $output = panels_frame_render_frame_layout($renderer, $content, $settings);
+    }
+    else {
+      $output = panels_frame_render_frame_wrapper($renderer, $content, $settings);
+    }
 
-    $vars['frames'][$name]  = $renderer->prefix . $rendered_content . $renderer->suffix;
+    $vars['frames'][$name] = $output;
   }
 
   // Rendering of individual frames are done, so let's put the original values
   // back where alter hooks would expect them to be.
-  $renderer->prefix = $renderer_prefix;
-  $renderer->suffix = $renderer_suffix;
-  $renderer->plugins['layout'] = $renderer_layout;
+  $renderer->prefix = $original_prefix;
+  $renderer->suffix = $original_suffix;
+  $renderer->plugins['layout'] = $original_layout;
+}
+
+/**
+ * Render the layout wrapper.
+ */
+function panels_frame_render_frame_wrapper($renderer, $content, $settings) {
+  $content = panels_frame_render_frame_layout($renderer, $content, $settings);
+
+  if (!empty($content)) {
+    $style = panels_get_style('default'); // @todo make this configurable
+
+    if (isset($style) && isset($style['render wrapper'])) {
+      return theme($style['render wrapper'], array('content' => $content, 'display' => $renderer->display, 'style' => $style, 'settings' => $settings));
+    }
+  }
+
+  return $content;
+}
+
+/**
+ * Render the layout of the frame. This is a simplified replacement for $renderer->render_layout().
+ */
+function panels_frame_render_frame_layout($renderer, $content, $settings) {
+  if ($renderer->admin && !empty($renderer->plugins['layout']['admin theme'])) {
+    $theme = $renderer->plugins['layout']['admin theme'];
+  }
+  else {
+    $theme = $renderer->plugins['layout']['theme'];
+  }
+
+  $rendered_layout = theme($theme, array('content' => $content, 'settings' => $settings, 'display' => $renderer->display, 'layout' => $renderer->plugins['layout'], 'renderer' => $renderer));
+  return $renderer->prefix . $rendered_layout . $renderer->suffix;
 }
