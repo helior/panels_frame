@@ -112,7 +112,10 @@ function panels_frame_stack_settings(&$display, $layout, $settings) {
 function template_preprocess_panels_frame_stack(&$vars) {
   panels_frame_stack_distribute_layout_content($vars);
 
-  $vars['attributes_array']['id'] = $vars['css_id'];
+  if (!empty($vars['css_id'])) {
+    $vars['attributes_array']['id'] = $vars['css_id'];
+  }
+
   $vars['attributes_array']['class'][] = 'panels-frame';
 }
 
