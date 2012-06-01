@@ -77,8 +77,12 @@ abstract class panels_frame_ui extends ctools_export_ui {
     array_splice($this->rows[$item->name]['data'], 2, 0, $column);
   }
 
-  function list_render(&$form_state) {
+  function list_css() {
+    parent::list_css();
     ctools_add_css('panels-frame.ui', 'panels_frame');
+  }
+  
+  function list_render(&$form_state) {
     $table = array(
       'header' => $this->list_table_header(),
       'rows' => $this->rows,
