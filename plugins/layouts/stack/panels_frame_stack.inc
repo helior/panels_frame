@@ -153,7 +153,6 @@ function panels_frame_stack_distribute_layout_content(&$vars) {
   foreach ($vars['display']->panels_frames as $name => $frame) {
     // Distribute content
     $content = array();
-    // foreach (array_keys($frame['regions']) as $region) {
     foreach (array_keys($frame['plugin']['regions']) as $region) {
       $key = $name . '__' . $region;
       $content[$region] = $vars['content'][$key];

@@ -78,6 +78,8 @@ function panels_frame_stack_frame_form(&$form_state) {
     '#title' => 'layout',
     '#type' => 'panels_frame_layout',
     '#required' => TRUE,
+    '#no_builders' => TRUE,
+    '#no_frames' => TRUE,
     '#default_value' => isset($data[$name]['layout']) ? $data[$name]['layout'] : '',
   );
 
