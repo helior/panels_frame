@@ -63,8 +63,8 @@ function panels_frame_schema() {
       'admin_title' => 'label',
       'admin_description' => 'description',
       'api' => array(
-        'owner' => 'panels',
-        'api' => 'layouts',
+        'owner' => 'panels_frame',
+        'api' => 'frames',
         'minimum_version' => 1,
         'current_version' => 1,
       ),
