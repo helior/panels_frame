@@ -216,3 +216,27 @@ function panels_frame_element_layout_process($element, &$form_state, $form) {
 
   return $element;
 }
+
+/**
+ * Object-cache setter.
+ */
+function panels_frame_cache_set($type, $identifier, $cache) {
+  ctools_include('object-cache');
+  ctools_object_cache_set('panels_frame:' . $type, $identifier, $cache);
+}
+
+/**
+ * Object-cache getter.
+ */
+function panels_frame_cache_get($type, $identifier) {
+  ctools_include('object-cache');
+  ctools_object_cache_get($type, $identifier);
+}
+
+/**
+ * Object-cache clear.
+ */
+function panels_frame_cache_clear($type, $identifier) {
+  ctools_include('object-cache');
+  ctools_object_cache_clear($type, $identifier);
+}
