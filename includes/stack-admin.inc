@@ -238,9 +238,8 @@ function panels_frame_stack_ui_frames_after_build(&$element, &$form_state) {
   $table['attributes']['class'][] = 'panels-frame-ui';
   $table['attributes']['class'][] = $id;
   $table['sticky'] = TRUE;
-  $table['empty'] = t('No frames to display.');
+  $table['empty'] = t('No frames to display. Hit the %button_text button to get started.', array('%button_text' => t('Add frame')));
 
   $element['#children'] = theme('table', $table);
-
   return $element;
 }

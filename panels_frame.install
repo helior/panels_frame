@@ -95,4 +95,3 @@ function panels_frame_update_7002() {
 
   return t('Object cache identifiers updated.');
 }
-

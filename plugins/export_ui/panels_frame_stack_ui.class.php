@@ -138,5 +138,12 @@ class panels_frame_stack_ui extends panels_frame_ui {
     // The frame should be saved to the database now, so we should be able to
     // remove the object cache.
     panels_frame_cache_clear('stack', $form_state['cache_key']);
+
+    // Ensure that the Stack layout theme exists in the theme registry,
+    // otherwise, rebuild it.
+    $theme_hooks = theme_get_registry();
+    if (!isset($theme_hooks['panels_frame_stack'])) {
+      drupal_theme_rebuild();
+    }
   }
 }
