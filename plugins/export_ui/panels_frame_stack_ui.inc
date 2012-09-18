@@ -19,12 +19,4 @@ $plugin = array(
   'title singular proper' => t('Stack'),
   'title plural' => t('stacks'),
   'title plural proper' => t('Stacks'),
-
-  'use wizard' => TRUE,
-  'form info' => array(
-    'order' => array(
-      'basic' => t('Basic information'),
-      'frames' => t('Frames'),
-    ),
-  ),
 );

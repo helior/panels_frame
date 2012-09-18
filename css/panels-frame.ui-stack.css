@@ -1,3 +1,18 @@
 .panels-frame-stack-ui-table td.icon .layout-icon {
   float:left;
 }
+
+.stack-admin-info {
+  width:49%;
+}
+.stack-admin-frames {
+  width:50%;
+  margin-left:1%;
+}
+.stack-admin-info, .stack-admin-frames {
+  float:left;
+}
+
+.stack-admin-buttons {
+  clear:both;
+}

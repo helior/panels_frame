@@ -81,7 +81,7 @@ abstract class panels_frame_ui extends ctools_export_ui {
     parent::list_css();
     ctools_add_css('panels-frame.ui', 'panels_frame');
   }
-  
+
   function list_render(&$form_state) {
     $table = array(
       'header' => $this->list_table_header(),

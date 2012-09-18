@@ -218,25 +218,25 @@ function panels_frame_element_layout_process($element, &$form_state, $form) {
 }
 
 /**
- * Object-cache setter.
+ * Set object cache.
  */
 function panels_frame_cache_set($type, $identifier, $cache) {
   ctools_include('object-cache');
-  ctools_object_cache_set('panels_frame:' . $type, $identifier, $cache);
+  return ctools_object_cache_set('panels_frame:' . $type, $identifier, $cache);
 }
 
 /**
- * Object-cache getter.
+ * Get object cache.
  */
 function panels_frame_cache_get($type, $identifier) {
   ctools_include('object-cache');
-  ctools_object_cache_get($type, $identifier);
+  return ctools_object_cache_get('panels_frame:' . $type, $identifier);
 }
 
 /**
- * Object-cache clear.
+ * Clear object cache.
  */
 function panels_frame_cache_clear($type, $identifier) {
   ctools_include('object-cache');
-  ctools_object_cache_clear($type, $identifier);
+  return ctools_object_cache_clear('panels_frame:' . $type, $identifier);
 }

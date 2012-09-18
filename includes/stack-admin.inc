@@ -3,24 +3,23 @@
 /**
  * Ajax menu callback to add a fram to a Panels Frame Stack.
  */
-function panels_frame_stack_frame_ajax_delegate($op, $cache_mechanism, $cache_key, $name = NULL) {
+function panels_frame_stack_frame_ajax_delegate($op, $cache_key, $name = NULL) {
   ctools_include('ajax');
   ctools_include('cache');
   ctools_include('modal');
 
   // Fail early if we don't have the data we need.
-  if (empty($op) || empty($cache_mechanism) || empty($cache_key)) {
+  if (empty($op) || empty($cache_key)) {
     ctools_ajax_render_error();
   }
 
   // Load stored object from cache.
-  if (!($object = ctools_cache_get($cache_mechanism, $cache_key))) {
+  if (!($object = panels_frame_cache_get('stack', $cache_key))) {
     ctools_ajax_render_error(t('Invalid object name.'));
   }
 
   $form_state = array(
     'title' => t('!op Frame @name', array('!op' => ucwords($op), '@name' => $name)),
-    'cache_mechanism' => $cache_mechanism,
     'cache_key' => $cache_key,
     'object' => $object,
     'frame' => $name,
@@ -154,13 +153,12 @@ function panels_frame_stack_frame_delete($form, &$form_state) {
  * Submission handler for "delete"-ing a frame.
  */
 function panels_frame_stack_frame_delete_submit(&$form, &$form_state) {
-  $cache_mechanism = $form_state['cache_mechanism'];
   $cache_key = $form_state['cache_key'];
   $name = $form_state['frame'];
 
   $object = $form_state['object'];
   unset($object->data[$name]);
-  ctools_cache_set($cache_mechanism, $cache_key, $object);
+  panels_frame_cache_set('stack', $cache_key, $object);
 }
 
 /**
@@ -180,7 +178,6 @@ function panels_frame_stack_frame_layout_validate(&$form, &$form_state) {
  * Common submission handler for add/edit/clone operations.
  */
 function panels_frame_stack_frame_common_submit(&$form, &$form_state) {
-  $cache_mechanism = $form_state['cache_mechanism'];
   $cache_key = $form_state['cache_key'];
   $object = $form_state['object'];
 
@@ -189,7 +186,7 @@ function panels_frame_stack_frame_common_submit(&$form, &$form_state) {
   }
 
   $object->data[$frame['identifier']] = $frame;
-  ctools_cache_set($cache_mechanism, $cache_key, $object);
+  panels_frame_cache_set('stack', $cache_key, $object);
 }
 
 /**
