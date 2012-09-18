@@ -83,4 +83,24 @@ function panels_frame_update_7001() {
   return t('Flushed caches to cleanse the soul.');
 }
 
+/**
+ * Update any existing object caches for Stacks.
+ */
+function panels_frame_update_7002() {
+  // $old_obj = 'ctui_panels_frame_stack_ui';
+  // $results = db_query('SELECT * FROM {ctools_object_cache} WHERE obj = :old_obj', array(':old_obj' => $old_obj));
+  // foreach ($results as $result) {
+  //   db_query()
+  // }
+  // db_query('UPDATE {ctools_object_cache} SET obj = :new_type, name = CONCAT("edit-", name) WHERE obj = :old_type', array(
+  //   ':old_type' => 'ctui_panels_frame_stack_ui',
+  //   ':new_type' => 'panels_frame:stack',
+  // ));
+
+  db_update('ctools_object_cache')
+    ->condition('obj', 'ctui_panels_frame_stack_ui')
+    ->expression('name', "CONCAT('edit-', name)")
+    ->fields(array('obj' => 'panels_frame:stack'))
+    ->execute();
+}
 
