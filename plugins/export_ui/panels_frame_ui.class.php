@@ -147,4 +147,20 @@ abstract class panels_frame_ui extends ctools_export_ui {
       }
     }
   }
+
+  function edit_form_submit(&$form, &$form_state) {
+    parent::edit_form_submit($form, $form_state);
+
+    // The frame should be saved to the database now, so we should be able to
+    // remove the object cache.
+    panels_frame_cache_clear($form_state['item']->plugin, $form_state['cache_key']);
+  }
+
+  function delete_form_submit(&$form_state) {
+    parent::delete_form_submit($form_state);
+
+    // Also remove from object cache to keep things tidy.
+    $cache_key = 'edit-' . $form_state['item']->name;
+    panels_frame_cache_clear($form_state['item']->plugin, $cache_key);
+  }
 }
