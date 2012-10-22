@@ -1,0 +1,6 @@
+name = Panels Frame Test
+description = Test module for Panels Frame.
+core = 7.x
+hidden = TRUE
+
+dependencies[] = panels_frame
