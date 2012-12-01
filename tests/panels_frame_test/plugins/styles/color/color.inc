@@ -7,9 +7,7 @@ $plugin = array(
   'weight' => -100,
   'hook theme' => array(
     'panels_frame_test_style_box' => array(
-      'variables' => array('content' => NULL),
-      'path' => drupal_get_path('module', 'panels_frame_test'),
-      'file' => 'panels_frame_test.theme.inc',
+      'variables' => array('content' => NULL, 'class' => ''),
     ),
   ),
 
@@ -31,8 +29,8 @@ $plugin = array(
  * Theme callback for panes.
  */
 function theme_panels_frame_test_color_style_render_pane($variables) {
-  // dpm($variables);
-  return 'PANE';
+  dpm($variables);
+  return theme('panels_frame_test_style_box', array('content' => $variables['content']->content, 'class' => $variables['settings']['color']));
 }
 
 /**
@@ -69,8 +67,19 @@ function panels_frame_test_color_style_pane_settings_submit($form, $conf, &$form
 }
 
 /**
+ * Do the same as above for regions.
+ */
+/**
  * Theme callback for regions.
  */
 function theme_panels_frame_test_color_style_render_region($variables) {
   return 'REGION';
 }
+
+/**
+ * Theme callback.
+ */
+function theme_panels_frame_test_style_box($variables) {
+  return '<div class="panels-frame-test-box color-' . $variables['class'] . '">' . $variables['content'] . '</div>';
+}
+
