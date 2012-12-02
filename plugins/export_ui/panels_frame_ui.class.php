@@ -27,7 +27,9 @@ abstract class panels_frame_ui extends ctools_export_ui {
     // Add a filter element for Category.
     $options = array('all' => t('- All -'));
     foreach ($this->items as $item) {
-      $options[$item->category] = $item->category;
+      if (!empty($item->category)) {
+        $options[$item->category] = $item->category;
+      }
     }
 
     $form['top row']['category'] = array(
@@ -98,12 +100,13 @@ abstract class panels_frame_ui extends ctools_export_ui {
   function list_sort_options() {
     $options = parent::list_sort_options();
 
-    // Replace option labels with our own.
+    // Replace option labels "title" with "Label"
     $options['disabled'] = t('Enabled, Label');
     $options['label'] = t('Label');
 
-    // Add an additional Category option. It's out of order, but whatev.
-    $options['category'] = t('Category');
+    // Add an additional Category option after the first three options.
+    $category_option = array('category' => t('Category'));
+    array_splice($options, 3, 0, $category_option);
 
     return $options;
   }

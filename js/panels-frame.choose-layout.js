@@ -1,14 +1,16 @@
 (function($) {
+
   Drupal.behaviors.panelsFrameChooseLayout = {
     attach: function(context, settings) {
-      var tabs = settings.panelsFrame.chooseLayout.tabs;
+
+      // Create jQuery Tabs for every "choose-layout" element known by the system.
       for (id in settings.panelsFrame.chooseLayout.tabs) {
         $('#' + id, context).once('panels-frame-choose-layout', function() {
-          $(this)
-            .tabs(tabs[id]);
+          $(this).tabs(settings.panelsFrame.chooseLayout.tabs[id]);
             // .buttonset();
         });
       }
     }
   }
+
 })(jQuery);

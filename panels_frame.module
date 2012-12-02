@@ -18,17 +18,17 @@
  * Implements hook_panels_dashboard_blocks().
  */
 function panels_frame_panels_dashboard_blocks(&$vars) {
+  ctools_include('export');
+
   $vars['links']['panels_frame'] = array(
     'title' => l('Panels Frame', 'admin/structure/panels/frame'),
     'description' => t('Create new layouts from combining multiple layouts together!'),
   );
 
-  ctools_include('export');
-  $items = ctools_export_crud_load_all('panels_frame');
   $count = 0;
   $rows = array();
 
-  foreach ($items as $item) {
+  foreach (ctools_export_crud_load_all('panels_frame') as $item) {
     $rows[] = array(
       check_plain($item->label),
       array(
@@ -131,7 +131,7 @@ function panels_frame_element_layout_process($element, &$form_state, $form) {
   // Panels has somewhat of an access control system in the available layouts
   // per application, in order to respect this, we declare the "module name" in
   // which we should receive layouts for. This, of course, can be customized by
-  // the user.
+  // the #allowed_layouts property.
   $layouts = panels_common_get_allowed_layouts($element['#allowed_layouts']);
 
   // Remove builder layouts if they are not applicable.
