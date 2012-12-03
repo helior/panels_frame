@@ -190,6 +190,94 @@ function panels_frame_stack_frame_common_submit(&$form, &$form_state) {
 }
 
 /**
+ * Build the Stack edit form.
+ */
+function panels_frame_stack_edit_form($object) {
+  ctools_include('plugins', 'panels');
+
+  // Call out the values that will have no UI here. It will be referenced in
+  // multiple places.
+  $no_ui = array('label', 'identifier', 'layout');
+  $cache_key = panels_frame_cache_key($object->name);
+
+  // Built as a table-drag interface later..
+  $form['data'] = array(
+    '#no_ui' => $no_ui,
+    '#element_validate' => array('panels_frame_stack_ui_frames_sort'),
+    '#after_build' => array('panels_frame_stack_ui_frames_after_build'),
+    '#tree' => TRUE,
+  );
+
+  foreach ($object->data as $frame_id => $frame) {
+    foreach ($no_ui as $hidden) {
+      $form['data'][$frame_id][$hidden] = array(
+        '#type' => 'value',
+        '#value' => $frame[$hidden],
+      );
+    }
+
+    // Icon
+    $layout = panels_get_layout($frame['layout']);
+    $form['data'][$frame_id]['icon'] = array(
+      '#markup' => panels_print_layout_icon($layout['name'], $layout),
+    );
+
+    // Display Title
+    $form['data'][$frame_id]['title']['#markup'] = implode('<br />', array(
+      '<strong>' . $frame['label'] . '</strong>',
+      '<em>' . $layout['title'] . '</em>',
+    ));
+
+    // Weight
+    $form['data'][$frame_id]['weight'] = array(
+      '#type' => 'weight',
+      '#default_value' => $frame['weight'],
+      '#attributes' => array('class' => array('panels-frame-stack-frame-weight')),
+    );
+
+    // Operations
+    $operations = array(
+      array(
+        'title' => t('Edit'),
+        'href' => "panels_frame/stack/frame/ajax/edit/$cache_key/$frame_id",
+        'attributes' => array('class' => array('use-ajax')),
+      ),
+      array(
+        'title' => t('Clone'),
+        'href' => "panels_frame/stack/frame/ajax/clone/$cache_key/$frame_id",
+        'attributes' => array('class' => array('use-ajax')),
+      ),
+      array(
+        'title' => t('Delete'),
+        'href' => "panels_frame/stack/frame/ajax/delete/$cache_key/$frame_id",
+        'attributes' => array('class' => array('use-ajax')),
+      ),
+    );
+
+    $form['data'][$frame_id]['operations'] = array(
+      '#theme' => 'links__ctools_dropbutton',
+      '#links' => $operations,
+      '#attributes' => array('class' => array('links', 'inline')),
+    );
+  }
+
+  $form['add'] = array(
+    '#type' => 'submit',
+    '#attributes' => array('class' => array('ctools-use-modal')),
+    '#id' => 'panels-frame-stack-frame-add',
+    '#value' => t('Add frame'),
+  );
+
+  $form['add-url'] = array(
+    '#attributes' => array('class' => array("panels-frame-stack-frame-add-url")),
+    '#type' => 'hidden',
+    '#value' => url("panels_frame/stack/frame/ajax/add/$cache_key", array('absolute' => TRUE)),
+  );
+
+  return $form;
+}
+
+/**
  * Element validate callback to sort frames.
  */
 function panels_frame_stack_ui_frames_sort(&$element, &$form_state) {
@@ -224,7 +312,7 @@ function panels_frame_stack_ui_frames_after_build(&$element, &$form_state) {
     // Loop through each property.
     foreach (element_children($element[$frame]) as $property) {
       // Filter out the properties that have no UI.
-      if (!in_array($property, $form_state['no_ui'])) {
+      if (!in_array($property, $element['#no_ui'])) {
         $rows[] = array('data' => render($element[$frame][$property]), 'class' => $property);
       }
     }
