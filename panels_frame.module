@@ -218,6 +218,13 @@ function panels_frame_element_layout_process($element, &$form_state, $form) {
 }
 
 /**
+ * Provide a consistent cache identifier.
+ */
+function panels_frame_cache_key($name) {
+  return 'edit-' . $name;
+}
+
+/**
  * Set object cache.
  */
 function panels_frame_cache_set($type, $identifier, $cache) {
