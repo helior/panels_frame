@@ -31,10 +31,11 @@ function panels_frame_stack_frame_ajax_delegate($op, $cache_key, $name = NULL) {
 
   if ($form_state['executed']) {
     $commands = array();
-    // @todo render the table-drag correctly and replace on page. Only then can
-    // you simply dismiss the modal dialog box. Otherwise, just refresh the page.
-    // $commands[] = ctools_modal_command_dismiss();
-    $commands[] = ctools_ajax_command_reload();
+
+    // Rebuild stack edit form with new settings.
+    $form = drupal_build_form('panels_frame_stack_edit_form', $form_state);
+    $commands[] = ajax_command_replace('#panels-frame-stack-edit-form', drupal_render($form));
+    $commands[] = ctools_modal_command_dismiss();
   }
 
   print ajax_render($commands);
@@ -332,7 +333,6 @@ function panels_frame_stack_ui_frames_after_build(&$element, &$form_state) {
   $table['attributes']['id'] = $id;
   $table['attributes']['class'][] = 'panels-frame-ui';
   $table['attributes']['class'][] = $id;
-  $table['sticky'] = TRUE;
   $table['empty'] = t('No frames to display. Hit the %button_text button to get started.', array('%button_text' => t('Add frame')));
 
   $element['#children'] = theme('table', $table);

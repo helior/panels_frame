@@ -41,7 +41,7 @@ class panels_frame_stack_ui extends panels_frame_ui {
     $form['info']['#type'] = 'container';
     $form['info']['#attributes']['class'][] = 'stack-admin-info';
 
-    $form['frames'] = panels_frame_stack_edit_form($item);
+    $form['frames'] = panels_frame_stack_edit_form(array(), $form_state);
     $form['frames']['#type'] = 'container';
     $form['frames']['#attributes']['class'][] = 'stack-admin-frames';
 

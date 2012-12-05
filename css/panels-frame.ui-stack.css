@@ -5,11 +5,11 @@
 .stack-admin-info {
   width:49%;
 }
-.stack-admin-frames {
+#panels-frame-stack-edit-form {
   width:50%;
   margin-left:1%;
 }
-.stack-admin-info, .stack-admin-frames {
+.stack-admin-info, #panels-frame-stack-edit-form {
   float:left;
 }
 
