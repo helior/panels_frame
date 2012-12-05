@@ -34,11 +34,9 @@ class panels_frame_stack_ui extends panels_frame_ui {
     // Set the cache identifier and immediately set an object cache.
     $form_state['cache_key'] = panels_frame_cache_key($form_state['item']->name);
     if (is_object($cache = panels_frame_cache_get('stack', $form_state['cache_key']))) {
-      $item = $cache;
-    } else {
-      $item = $form_state['item'];
+      $form_state['item'] = $cache;
     }
-    panels_frame_cache_set('stack', $form_state['cache_key'], $item);
+    panels_frame_cache_set('stack', $form_state['cache_key'], $form_state['item']);
 
     $form['info']['#type'] = 'container';
     $form['info']['#attributes']['class'][] = 'stack-admin-info';

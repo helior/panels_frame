@@ -108,7 +108,7 @@ function panels_frame_element_info() {
  * Machine-name exists callback for frame identifiers.
  */
 function panels_frame_frame_identifier_exists($value, &$element, &$form_state) {
-  return in_array($value, array_keys($form_state['object']->data));
+  return in_array($value, array_keys($form_state['item']->data));
 }
 
 /**

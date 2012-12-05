@@ -14,14 +14,14 @@ function panels_frame_stack_frame_ajax_delegate($op, $cache_key, $name = NULL) {
   }
 
   // Load stored object from cache.
-  if (!($object = panels_frame_cache_get('stack', $cache_key))) {
+  if (!($item = panels_frame_cache_get('stack', $cache_key))) {
     ctools_ajax_render_error(t('Invalid object name.'));
   }
 
   $form_state = array(
     'title' => t('!op Frame @name', array('!op' => ucwords($op), '@name' => $name)),
     'cache_key' => $cache_key,
-    'object' => $object,
+    'item' => $item,
     'frame' => $name,
     'ajax' => TRUE,
     'op' => $op,
@@ -45,7 +45,7 @@ function panels_frame_stack_frame_ajax_delegate($op, $cache_key, $name = NULL) {
  * Helper for building the frame form.
  */
 function panels_frame_stack_frame_form(&$form_state) {
-  $data = $form_state['object']->data;
+  $data = $form_state['item']->data;
   $name = $form_state['frame'];
 
   $form['label'] = array(
@@ -156,9 +156,9 @@ function panels_frame_stack_frame_delete_submit(&$form, &$form_state) {
   $cache_key = $form_state['cache_key'];
   $name = $form_state['frame'];
 
-  $object = $form_state['object'];
-  unset($object->data[$name]);
-  panels_frame_cache_set('stack', $cache_key, $object);
+  $item = $form_state['item'];
+  unset($item->data[$name]);
+  panels_frame_cache_set('stack', $cache_key, $item);
 }
 
 /**
@@ -166,7 +166,7 @@ function panels_frame_stack_frame_delete_submit(&$form, &$form_state) {
  * @fixme Need a proper helper that builds layout name (ex: panels_frame:stack:name).
  */
 function panels_frame_stack_frame_layout_validate(&$form, &$form_state) {
-  $name = $form_state['object']->name;
+  $name = $form_state['item']->name;
   $frame = $form_state['values']['identifier'];
   $layout = $form_state['values']['layout'];
   if ($layout == 'panels_frame_stack:' . $name) {
@@ -179,26 +179,31 @@ function panels_frame_stack_frame_layout_validate(&$form, &$form_state) {
  */
 function panels_frame_stack_frame_common_submit(&$form, &$form_state) {
   $cache_key = $form_state['cache_key'];
-  $object = $form_state['object'];
+  $item = $form_state['item'];
 
   foreach (array('label', 'identifier', 'weight', 'layout') as $key) {
     $frame[$key] = $form_state['values'][$key];
   }
 
-  $object->data[$frame['identifier']] = $frame;
-  panels_frame_cache_set('stack', $cache_key, $object);
+  $item->data[$frame['identifier']] = $frame;
+  panels_frame_cache_set('stack', $cache_key, $item);
 }
 
 /**
  * Build the Stack edit form.
  */
-function panels_frame_stack_edit_form($object) {
+function panels_frame_stack_edit_form($form, &$form_state) {
   ctools_include('plugins', 'panels');
+  $item = $form_state['item'];
+
+  // Wrapper to allow for ajax replacement.
+  $form['#prefix'] = '<div id="panels-frame-stack-edit-form">';
+  $form['#suffix'] = '</div>';
 
   // Call out the values that will have no UI here. It will be referenced in
   // multiple places.
   $no_ui = array('label', 'identifier', 'layout');
-  $cache_key = panels_frame_cache_key($object->name);
+  $cache_key = panels_frame_cache_key($item->name);
 
   // Built as a table-drag interface later..
   $form['data'] = array(
@@ -208,7 +213,7 @@ function panels_frame_stack_edit_form($object) {
     '#tree' => TRUE,
   );
 
-  foreach ($object->data as $frame_id => $frame) {
+  foreach ($item->data as $frame_id => $frame) {
     foreach ($no_ui as $hidden) {
       $form['data'][$frame_id][$hidden] = array(
         '#type' => 'value',
@@ -278,7 +283,8 @@ function panels_frame_stack_edit_form($object) {
 }
 
 /**
- * Element validate callback to sort frames.
+ * Element validate callback to sort frames. Doesn't actually validate anything,
+ * but is used as an opportunity to sort frames by their "weight".
  */
 function panels_frame_stack_ui_frames_sort(&$element, &$form_state) {
   $value = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
@@ -293,6 +299,7 @@ function panels_frame_stack_ui_frames_sort(&$element, &$form_state) {
  */
 function panels_frame_stack_ui_frames_after_build(&$element, &$form_state) {
   $id = 'panels-frame-stack-ui-table';
+
   ctools_add_css('panels-frame.ui', 'panels_frame');
   ctools_add_css('panels-frame.ui-stack', 'panels_frame');
   drupal_add_tabledrag($id, 'order', 'sibling', 'panels-frame-stack-frame-weight');
