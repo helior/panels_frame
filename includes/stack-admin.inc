@@ -3,10 +3,11 @@
 /**
  * Ajax menu callback to add a fram to a Panels Frame Stack.
  */
-function panels_frame_stack_frame_ajax_delegate($op, $cache_key, $name = NULL) {
+function panels_frame_stack_frame_ajax_delegate($op, $cache_key, $name = NULL, $step = NULL) {
   ctools_include('ajax');
   ctools_include('cache');
   ctools_include('modal');
+  $commands = array();
 
   // Fail early if we don't have the data we need.
   if (empty($op) || empty($cache_key)) {
@@ -27,19 +28,73 @@ function panels_frame_stack_frame_ajax_delegate($op, $cache_key, $name = NULL) {
     'op' => $op,
   );
 
-  $commands = ctools_modal_form_wrapper("panels_frame_stack_frame_$op", $form_state);
+  // Use a form wizard when we add a new frame.
+  if ($op == 'add') {
+    ctools_include('wizard');
 
-  if ($form_state['executed']) {
-    $commands = array();
+    if (empty($step)) {
+      $step = 'layout';
+      // @todo do we need to clear the object cache.
+    }
 
-    // Rebuild stack edit form with new settings.
-    $form = drupal_build_form('panels_frame_stack_edit_form', $form_state);
-    $commands[] = ajax_command_replace('#panels-frame-stack-edit-form', drupal_render($form));
-    $commands[] = ctools_modal_command_dismiss();
+    $form_info = array(
+      'id' => 'panels_frame_stack_frame_wizard',
+      'auto cache' => TRUE,
+      'show trail' => TRUE,
+      'path' => "panels_frame/stack/frame/ajax/$op/$cache_key/$name/%step",
+      'show back' => TRUE,
+      'show cancel' => TRUE,
+      'order' => array(
+        'layout' => t('Choose layout'),
+        'regions' => t('Customize Regions'),
+      ),
+      'forms' => array(
+        'layout' => array(
+          'form id' => 'panels_frame_stack_frame_layout_add',
+          'validate' => 'panels_frame_stack_frame_layout_validate',
+          'submit' => 'panels_frame_stack_frame_common_submit',
+        ),
+        'regions' => array(
+          'form id' => 'panels_frame_stack_frame_region_add',
+          'validate' => 'panels_frame_stack_frame_region_validate',
+          'submit' => 'panels_frame_stack_frame_region_submit',
+        ),
+      ),
+    );
+
+    $form = ctools_wizard_multistep_form($form_info, $step, $form_state);
+    $output = drupal_render($form);
+
+    if (!empty($form_state['cancel'])) {
+      // @todo cancel callback should clear and re-create an empty cache FOR THE ADD WIZARD.
+      $commands[] = ctools_modal_command_dismiss();
+    }
+    else if (!empty($form_state['complete'])) {
+      // @todo finish callback should save
+      $form = drupal_build_form('panels_frame_stack_edit_form', $form_state);
+      $commands[] = ajax_command_replace('#panels-frame-stack-edit-form', drupal_render($form));
+      $commands[] = ctools_modal_command_dismiss();
+    }
+    else {
+      $commands = ctools_modal_form_render($form_state, $output);
+    }
+
+    print ajax_render($commands);
+    exit;
   }
+  else {
+    $commands = ctools_modal_form_wrapper("panels_frame_stack_frame_$op", $form_state);
 
-  print ajax_render($commands);
-  exit;
+    if ($form_state['executed']) {
+      // Rebuild stack edit form with new settings.
+      $form = drupal_build_form('panels_frame_stack_edit_form', $form_state);
+      $commands[] = ajax_command_replace('#panels-frame-stack-edit-form', drupal_render($form));
+      $commands[] = ctools_modal_command_dismiss();
+    }
+
+    print ajax_render($commands);
+    exit;
+  }
 }
 
 /**
@@ -87,21 +142,50 @@ function panels_frame_stack_frame_form(&$form_state) {
 }
 
 /**
- * Form builder for "add"-ing a frame.
+ * Helper for building the region form.
  */
-function panels_frame_stack_frame_add($form, &$form_state) {
-  $form = panels_frame_stack_frame_form($form_state);
+function panels_frame_stack_region_form(&$form_state) {
+  $data = $form_state['item']->data;
+  $name = $form_state['frame'];
 
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Add'),
-    '#validate' => array('panels_frame_stack_frame_layout_validate'),
-    '#submit' => array('panels_frame_stack_frame_common_submit'),
+  $form['xx'] = array(
+    '#type' => 'textfield',
+    '#title' => t('XX'),
+    '#default_value' => isset($data[$name]['xx']) ? $data[$name]['xx'] : '',
   );
 
   return $form;
 }
 
+/**
+ * Form builder for "add"-ing a frame.
+ */
+function panels_frame_stack_frame_layout_add($form, &$form_state) {
+  $form = panels_frame_stack_frame_form($form_state);
+
+  // This is now handled by the form-wizard.
+  // $form['submit'] = array(
+  //   '#type' => 'submit',
+  //   '#value' => t('Add'),
+  //   '#validate' => array('panels_frame_stack_frame_layout_validate'),
+  //   '#submit' => array('panels_frame_stack_frame_common_submit'),
+  // );
+
+  return $form;
+}
+
+/**
+ * Form builder for "add"-ing customizations to regions.
+ */
+function panels_frame_stack_frame_region_add($form, &$form_state) {
+  $form = panels_frame_stack_region_form($form_state);
+
+  return $form;
+}
+
+/**
+ * Validation callback for region
+ */
 /**
  * Form builder for "edit"-ing a frame.
  */
