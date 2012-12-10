@@ -12,6 +12,11 @@ Data
     - identifier
     - layout
     - weight
+    * [map]
+      - layout-region -> frame-region
+    * [regions]
+        - machine -> title
+
 Settings
 
 **Display**
