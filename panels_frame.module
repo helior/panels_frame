@@ -191,7 +191,7 @@ function panels_frame_element_layout_process($element, &$form_state, $form) {
     }
   }
 
-  // Attach all the necessary assets. Not that #tab_options allows the user to
+  // Attach all the necessary assets. Note that #tab_options allows the user to
   // control the options that are passed to the jQuery Tab library and therefore
   // manipulate how it behaves.
   $element['#attached'] = array(

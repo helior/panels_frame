@@ -39,22 +39,20 @@ function panels_frame_stack_frame_ajax_delegate($op, $cache_key, $name = NULL, $
 
     $form_info = array(
       'id' => 'panels_frame_stack_frame_wizard',
+      'path' => "panels_frame/stack/frame/ajax/$op/$cache_key/$name/%step",
       'auto cache' => TRUE,
       'show trail' => TRUE,
-      'path' => "panels_frame/stack/frame/ajax/$op/$cache_key/$name/%step",
       'show back' => TRUE,
       'show cancel' => TRUE,
-      'order' => array(
-        'layout' => t('Choose layout'),
-        'regions' => t('Customize Regions'),
-      ),
       'forms' => array(
         'layout' => array(
+          'title' => t('Choose layout'),
           'form id' => 'panels_frame_stack_frame_layout_add',
           'validate' => 'panels_frame_stack_frame_layout_validate',
           'submit' => 'panels_frame_stack_frame_common_submit',
         ),
         'regions' => array(
+          'title' => t('Customize Regions'),
           'form id' => 'panels_frame_stack_frame_region_add',
           'validate' => 'panels_frame_stack_frame_region_validate',
           'submit' => 'panels_frame_stack_frame_region_submit',
@@ -422,3 +420,10 @@ function panels_frame_stack_ui_frames_after_build(&$element, &$form_state) {
   $element['#children'] = theme('table', $table);
   return $element;
 }
+
+
+function panels_frame_stack_frame_wizard_back(&$form_state) {}
+function panels_frame_stack_frame_wizard_next(&$form_state) {}
+function panels_frame_stack_frame_wizard_return(&$form_state) {}
+function panels_frame_stack_frame_wizard_cancel(&$form_state) {}
+function panels_frame_stack_frame_wizard_finish(&$form_state) {}
