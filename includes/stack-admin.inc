@@ -288,6 +288,12 @@ function panels_frame_stack_edit_form($form, &$form_state) {
  * but is used as an opportunity to sort frames by their "weight".
  */
 function panels_frame_stack_ui_frames_sort(&$element, &$form_state) {
+  $weight = 0;
+  foreach ($form_state['values']['data'] as $delta => $item) {
+    if (isset($item['identifier']) && $item['weight'] == 0) {
+      $form_state['values']['data'][$delta]['weight'] = $weight++;
+    }
+  }
   $value = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
   if ($value) {
     uasort($value, 'drupal_sort_weight');
