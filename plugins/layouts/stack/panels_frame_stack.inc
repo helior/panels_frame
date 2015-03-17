@@ -161,6 +161,7 @@ function panels_frame_stack_distribute_layout_content(&$vars) {
     $renderer->prefix = '';
     $renderer->suffix = '';
     $renderer->plugins['layout'] = $frame['plugin'];
+    $vars['display']->current_frame = $name;
 
     $renderer->add_meta();
     $settings = isset($vars['display']->layout_settings[$name]) ? $vars['display']->layout_settings[$name] : array();
@@ -174,6 +175,8 @@ function panels_frame_stack_distribute_layout_content(&$vars) {
 
     $vars['frames'][$name] = $output;
   }
+
+  unset($vars['display']->current_frame);
 
   // Rendering of individual frames are done, so let's put the original values
   // back where alter hooks would expect them to be.
