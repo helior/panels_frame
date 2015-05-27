@@ -61,7 +61,7 @@ function panels_frame_stack_region(&$display, $settings, $base_layout) {
   foreach ($base_layout['panels_frame']->data as $name => $frame) {
     // The UI protects against recursion, but we check again just in case.
     if ($display->layout == $frame['layout']) {
-      watchdog('panels_frame', 'Uh-oh. @frame cannot be embedded within itself! !link', array('@frame' => $frame['layout'], '!link' => l(t('Fix the anomaly'), 'admin/structure/panels/frame/stacks/list/' . $frame['name'] . '/edit/frames')), WATHDOG_WARNING);
+      watchdog('panels_frame', 'Uh-oh. @frame cannot be embedded within itself! !link', array('@frame' => $frame['layout'], '!link' => l(t('Fix the anomaly'), 'admin/structure/panels/frame/stacks/list/' . $frame['name'] . '/edit/frames')), WATCHDOG_WARNING);
       continue;
     }
 
