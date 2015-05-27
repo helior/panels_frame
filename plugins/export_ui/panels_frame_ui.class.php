@@ -145,8 +145,8 @@ abstract class panels_frame_ui extends ctools_export_ui {
 
     // Validate Categories to make sure they don't contain illegal characters.
     if (isset($form_state['values']['category'])) {
-      if (preg_match("/[^A-Za-z0-9 ]/", $form_state['values']['category'])) {
-        form_error($form['category'], t('Categories may contain only alphanumerics or spaces.'));
+      if (preg_match("/[^A-Za-z0-9 \-_:]/", $form_state['values']['category'])) {
+        form_error($form['info']['category'], t('Categories may contain only alphanumeric characters, hyphens, colons, underscores, or spaces.'));
       }
     }
   }
