@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Ajax menu callback to add a fram to a Panels Frame Stack.
+ * Ajax menu callback to add a frame to a Panels Frame Stack.
  */
 function panels_frame_stack_frame_ajax_delegate($op, $cache_key, $name = NULL) {
   ctools_include('ajax');

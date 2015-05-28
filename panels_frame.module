@@ -105,6 +105,14 @@ function panels_frame_element_info() {
 }
 
 /**
+ * Implements hook_js_alter().
+ */
+function panels_frame_js_alter(&$javascripts) {
+  $file = drupal_get_path('module', 'panels') . '/js/panels-base.js';
+  $javascripts[$file]['weight'] -= 0.001;
+}
+
+/**
  * Machine-name exists callback for frame identifiers.
  */
 function panels_frame_frame_identifier_exists($value, &$element, &$form_state) {
