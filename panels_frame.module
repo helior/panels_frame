@@ -106,6 +106,10 @@ function panels_frame_element_info() {
 
 /**
  * Implements hook_js_alter().
+ *
+ * @todo remove this when https://www.drupal.org/node/2496207 is resolved.
+ * We're only /slightly/ modifying the sorting of panels-base.js until the
+ * Drupal.Panels object is properly initialized and weight order is irrelevant.
  */
 function panels_frame_js_alter(&$javascripts) {
   $file = drupal_get_path('module', 'panels') . '/js/panels-base.js';
