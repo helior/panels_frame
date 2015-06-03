@@ -113,7 +113,10 @@ function panels_frame_element_info() {
  */
 function panels_frame_js_alter(&$javascripts) {
   $file = drupal_get_path('module', 'panels') . '/js/panels-base.js';
-  $javascripts[$file]['weight'] -= 0.001;
+  // Check if file exist, then attempt to adjust weight to avoid conflicts.
+  if (isset($javascripts[$file])) {
+    $javascripts[$file]['weight'] -= 0.001;
+  }
 }
 
 /**
